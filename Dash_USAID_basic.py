@@ -18,7 +18,7 @@ fig.add_trace(
 # Add images
 fig.add_layout_image(
         dict(
-            source="/assets/SD Model 2020-02-26.png",
+            source="/assets/SD_Model_2020-02-26.png",
             xref="x",
             yref="y",
             x=0,
