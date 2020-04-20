@@ -212,7 +212,7 @@ app.layout = html.Div(style={'backgroundColor':colors['backgroundColor']}, child
     html.Div([
         html.Div(
             html.Img(
-                src=app.get_asset_url('Map of the SD Model.png'),
+                src=app.get_asset_url('Map_of_the_SD_Model.png'),
                 style = {
                     'width': '100%',
                     'height': '100%',
