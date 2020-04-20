@@ -30,7 +30,12 @@ fig.add_layout_image(
             layer="above")
 )
 # Set templates
-fig.update_layout(template="plotly_white",clickmode='event+select') # white background
+fig.update_layout(width=800,
+    height=550,
+    margin=dict(l=20, r=20, t=20, b=20),
+template="plotly_white",
+clickmode='event+select') # white background
+
 
 # SET UP APP
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
