@@ -13,7 +13,12 @@ import plotly.graph_objects as go # or plotly.express as px
 fig = go.Figure() # or any Plotly Express function e.g. px.bar(...)
 # Add trace
 fig.add_trace(
-    go.Scatter(x=[0, 1/2, 1/2, 1/2, 1, 1], y=[0, 0, 1/2, 0, 0, 1])
+    go.Scatter(
+        x=[0.6, 0.7, 0.85, 0, 1],
+        y=[0.5, 0.5, 0.3,  0, 1],
+        text = ["Psychological Violence", "Physical Violence", "Deportation", "", ""],
+        hovertemplate = "%{text}",
+    )
 )
 # Add images
 fig.add_layout_image(
@@ -46,13 +51,15 @@ colors = {
     'text': '#1f77b4'  # dark blue
 }
 
-df = pd.read_excel('deported_children.xlsx', header=5)
+df_children_deportation = pd.read_excel('deported_children.xlsx', header=5)
+df_phiv = pd.read_excel('physical_violence.xlsx')
+df_psyv = pd.read_excel('psychological_violence.xlsx')
 
 # DATA FIGURE
 def deported_children_monthly_plot():
-    counter = collections.Counter(df['Month'])
+    counter = collections.Counter(df_children_deportation['Month'])
     months = []
-    for key in df['Month']:
+    for key in df_children_deportation['Month']:
         if key not in months:
             months.append(key)
     return {
@@ -64,52 +71,61 @@ def deported_children_monthly_plot():
         }]
     }
 
-def deported_children_sex_plot():
-    counter = collections.Counter(df['Sex'])
+def physical_violence_plot():
     return {
         'data': [{
-            'x': [key for key in counter.keys()],
-            'y': [counter[key] for key in counter.keys()],
+            'x': df_phiv.year.to_list(),
+            'y': df_phiv.physical_violence.to_list(),
             'type': 'bar',
-            'name': 'Deported children 2018 Sex',
+            'name': 'Physical Violence', 
         }]
     }
 
-def deported_children_life_stage_plot():
-    counter = collections.Counter(df['Life stage'])
+def psychological_violence_plot():
     return {
         'data': [{
-            'x': [key for key in counter.keys()],
-            'y': [counter[key] for key in counter.keys()],
+            'x': df_psyv.year.to_list(),
+            'y': df_psyv.psychological_violence.to_list(),
             'type': 'bar',
-            'name': 'Deported children 2018 Sex',
+            'name': 'Psychological Violence', 
         }]
     }
 
-def deported_children_reasons_for_migration_plot():
-    counter = collections.Counter(df['Reasons for migration'])
-    return {
-        'data': [{
-            'x': [key for key in counter.keys()],
-            'y': [counter[key] for key in counter.keys()],
-            'type': 'bar',
-            'name': 'Deported children 2018 Sex',
-        }]
-    }
+# def deported_children_life_stage_plot():
+#     counter = collections.Counter(df_children['Life stage'])
+#     return {
+#         'data': [{
+#             'x': [key for key in counter.keys()],
+#             'y': [counter[key] for key in counter.keys()],
+#             'type': 'bar',
+#             'name': 'Deported children 2018 life stage',
+#         }]
+#     }
+
+# def deported_children_reasons_for_migration_plot():
+#     counter = collections.Counter(df_children['Reasons for migration'])
+#     return {
+#         'data': [{
+#             'x': [key for key in counter.keys()],
+#             'y': [counter[key] for key in counter.keys()],
+#             'type': 'bar',
+#             'name': 'Deported reason of children 2018',
+#         }]
+#     }
 
 def plot_figure(pointIndex=-1):
     if pointIndex==2:
         title = 'Monthly Deported Children in 2018'
         fig = deported_children_monthly_plot()
-    elif pointIndex==3:
-        title = 'Deported Children Sex in 2018'
-        fig = deported_children_sex_plot()
-    elif pointIndex==4:
-        title = 'Deported Children Life Stage in 2018'
-        fig = deported_children_life_stage_plot()
-    elif pointIndex==5:
-        title = 'Deported Children Reasons for Migration in 2018'
-        fig = deported_children_reasons_for_migration_plot()
+    elif pointIndex==1:
+        title = 'Physical violence from 2014 to 2017'
+        fig = physical_violence_plot()
+    elif pointIndex==0:
+        title = 'Psychlogical violence from 2014 to 2017'
+        fig = psychological_violence_plot()
+    # elif pointIndex==5:
+    #     title = 'Deported Children Reasons for Migration in 2018'
+    #     fig = deported_children_reasons_for_migration_plot()
     else:
         title = 'Somethine Else in 2018'
         return ({'visibility':'hidden'}, deported_children_monthly_plot(), '')
