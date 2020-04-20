@@ -42,10 +42,14 @@ colors = {
 }
 
 # DATA FIGURE
-def deported_children_monthly_plot():
+def deported_children_monthly_plot(pointIndex):
     df = pd.read_excel('deported_children.xlsx', header=5)
     counter = collections.Counter(df['Month'])
     months = []
+    if pointIndex==2:
+        type = 'bar'
+    else:
+        type = 'line'
     for key in df['Month']:
         if key not in months:
             months.append(key)
@@ -53,7 +57,7 @@ def deported_children_monthly_plot():
         'data': [{
             'x': months,
             'y': [counter[month] for month in months],
-            'type': 'bar',
+            'type': type,
             'name': 'Deported children 2018',
         }]
     }
@@ -93,38 +97,23 @@ app.layout = html.Div(style={'backgroundColor':colors['backgroundColor']}, child
                 figure=fig,
                 id="SD-model-image",
             ),
-            className="six columns",
+            className="eight columns",
         ),
         html.Div(
             [
-                html.H5('Monthly Deported Children in 2018'),
-                dcc.Graph(figure = deported_children_monthly_plot())
+                html.H5(children='',
+                    id='figure-h'),
+                dcc.Graph(
+                    figure = deported_children_monthly_plot(2),
+                    id="figure-graph",
+                )
             ],
-            id="show-after-click-2",
-            className="three columns",
+            id="figure-div",
+            className="four columns",
             style = {
                 'visibility':"hidden", # visible or hidden
             },
         ),
-        html.Div(
-            [
-                html.H5('Something Else in 2018'),
-                dcc.Graph(figure = deported_children_monthly_plot())
-            ],
-            id="show-after-click-5",
-            className="three columns",
-            style = {
-                'visibility':"hidden", # visible or hidden
-            },
-        ),
-        # html.Div(
-        #     'Stock was clicked',
-        #     id="show-after-click",
-        #     className="two columns",
-        #     style = {
-        #         'visibility':"hidden", # visible or hidden
-        #     },
-        # ),
     ], className="row pretty_container"),
 
     html.Div([
@@ -147,21 +136,21 @@ app.layout = html.Div(style={'backgroundColor':colors['backgroundColor']}, child
 
 # CALLBACKS
 @app.callback([
-    Output('show-after-click-2', 'style'),
-    Output('show-after-click-5', 'style'),
+    Output('figure-div', 'style'),
+    Output('figure-graph', 'figure'),
+    Output('figure-h', 'children'),
     ],
     [Input('SD-model-image', 'clickData')])
 def display_click_data(clickData):
     if clickData is None:
-        return ({'visibility':'hidden'},{'visibility':'hidden'})
+        return ({'visibility':'hidden'},deported_children_monthly_plot(2),'')
     else:
         pointIndex = clickData["points"][0]["pointIndex"] # needed later
         if pointIndex==2:
-            return ({'visibility':'visible'},{'visibility':'hidden'})
-        elif pointIndex==5:
-            return ({'visibility':'hidden'},{'visibility':'visible'})
+            title = 'Monthly Deported Children in 2018'
         else:
-            return ({'visibility':'hidden'},{'visibility':'hidden'})
+            title = 'Somethine Else in 2018'
+        return ({'visibility':'visible'},deported_children_monthly_plot(pointIndex),title)
 
 if __name__ == '__main__':
     app.run_server(debug=True)
