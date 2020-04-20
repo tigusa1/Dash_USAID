@@ -12,6 +12,8 @@ colors = {
     'text': '#1f77b4'  # dark blue
 }
 
+
+
 app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     html.Div([
         html.Div(
@@ -43,7 +45,8 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     html.Div([
         html.Div(
         	html.Img(
-        		src=app.get_asset_url('SD Model 2020-02-26.png'),
+        		src=app.get_asset_url('SD_Model_2020-02-26.png'),
+                style={'height':'100%', 'width':'100%'},
     		),
             className="eight columns",
         ),
