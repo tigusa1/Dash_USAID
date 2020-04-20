@@ -4,6 +4,32 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 
+import plotly.graph_objects as go # or plotly.express as px
+
+# FIGURE AND IMAGE
+fig = go.Figure() # or any Plotly Express function e.g. px.bar(...)
+# Add trace
+fig.add_trace(
+    go.Scatter(x=[0, 1, 1], y=[0, 0, 1])
+)
+# Add images
+fig.add_layout_image(
+        dict(
+            source="/assets/SD Model 2020-02-26.png",
+            xref="x",
+            yref="y",
+            x=0,
+            y=1,
+            sizex=1,
+            sizey=1,
+            sizing="stretch",
+            opacity=1.0,
+            layer="below")
+)
+# Set templates
+fig.update_layout(template="plotly_white") # white background
+
+# SET UP APP
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
@@ -42,17 +68,9 @@ app.layout = html.Div(style={'backgroundColor':colors['backgroundColor']}, child
 
     html.Div([
         html.Div(
-            html.Img(
-                src=app.get_asset_url('SD Model 2020-02-26.png'),
-                style = {
-                    'width': '100%',
-                    'height': '100%',
-                },
+            dcc.Graph(figure=fig
             ),
-            className="nine columns",
-        ),
-        html.Div(
-            className="three columns",
+            className="ten columns",
         ),
     ], className="row pretty_container"),
 
