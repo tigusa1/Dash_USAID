@@ -18,6 +18,8 @@ fig.add_trace(
         y=[0.5, 0.5, 0.3,  0, 1],
         text = ["Psychological Violence", "Physical Violence", "Deportation", "", ""],
         hovertemplate = "%{text}",
+        opacity=0.0,
+        name="",
     )
 )
 # Add images
@@ -32,14 +34,27 @@ fig.add_layout_image(
             sizey=1,
             # sizing="stretch",
             opacity=1.0,
-            layer="above")
+            layer="above",
+            )
 )
 # Set templates
-fig.update_layout(width=800,
+fig.update_layout(
+    width=800,
     height=550,
     margin=dict(l=20, r=20, t=20, b=20),
-template="plotly_white",
-clickmode='event+select') # white background
+    template="plotly_white", # white background
+    clickmode='event+select',
+    xaxis = go.XAxis(
+        title = '',
+        showticklabels=False,
+        fixedrange= True,
+    ),
+    yaxis = go.YAxis(
+        title = '',
+        showticklabels=False,
+        fixedrange= True,
+    ),
+)
 
 
 # SET UP APP
@@ -140,7 +155,7 @@ app.layout = html.Div(style={'backgroundColor':colors['backgroundColor']}, child
     html.Div([
         html.Div(
             html.H2(
-                'SD Model',
+                'SD Data and Model Visualization, Version Alpha 1.0',
                 style={
                     'textAlign': 'left',
                     'color': colors['text'],
@@ -160,6 +175,7 @@ app.layout = html.Div(style={'backgroundColor':colors['backgroundColor']}, child
                 },
             ),
             className="four columns",
+            hidden = True,
         ),
     ], className="row pretty_container"),	
 
@@ -168,6 +184,9 @@ app.layout = html.Div(style={'backgroundColor':colors['backgroundColor']}, child
             dcc.Graph(
                 figure=fig,
                 id="SD-model-image",
+                config={
+                    'displayModeBar': False
+                },
             ),
             className="eight columns",
         ),
@@ -177,6 +196,9 @@ app.layout = html.Div(style={'backgroundColor':colors['backgroundColor']}, child
                     id='figure-h'),
                 dcc.Graph(
                     id="figure-graph",
+                    config={
+                    'displayModeBar': False
+                    },
                 )
             ],
             id="figure-div",
@@ -203,6 +225,52 @@ app.layout = html.Div(style={'backgroundColor':colors['backgroundColor']}, child
         ),
     ], className="row pretty_container"),
 
+    html.Div([
+        html.Div(
+            html.H3(
+                'SD Team in El Salvador',
+                style={
+                    'textAlign': 'center',
+                    'color': colors['text'],
+                },
+            ),
+            className="six columns",
+        ),
+        html.Div(
+            html.H3(
+                'SD Team in Honduras',
+                style={
+                    'textAlign': 'center',
+                    'color': colors['text'],
+                },
+            ),
+            className="six columns",
+        ),
+    ], className="row pretty_container"),   
+
+
+    html.Div([
+        html.Div(
+            html.Img(
+                src=app.get_asset_url('El_Salvador_picture.png'),
+                style = {
+                    'width': '100%',
+                    'height': '100%',
+                },
+            ),
+            className="six columns",
+        ),
+        html.Div(
+            html.Img(
+                src=app.get_asset_url('Honduras_picture.png'),
+                style = {
+                    'width': '100%',
+                    'height': '100%',
+                },
+            ),
+            className="six columns",
+        ),
+    ], className="row pretty_container"),
 ])
 
 # CALLBACKS
