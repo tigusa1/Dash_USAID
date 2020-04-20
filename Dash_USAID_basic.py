@@ -8,11 +8,12 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 colors = {
-	'background': '#111111',
+	'backgroundColor': '#d9eef2',
     'text': '#1f77b4'  # dark blue
 }
 
-app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
+app.layout = html.Div(style={'backgroundColor':colors['backgroundColor']}, children=[
+    html.Div("",style={'padding-top':'5px','backgroundColor':colors['backgroundColor']}),
     html.Div([
         html.Div(
             html.H2(
@@ -29,28 +30,47 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
                 'Reset',
                 id='reset-button',
                 n_clicks=0,
+                style = {
+                    # 'width': '30%',
+                    'float': 'right',
+                    'margin-top':'30px',
+                },
             ),
-            style = {
-                'width': '30%',
-                'float': 'right',
-                'margin-right':'-280px',
-                'margin-top':'30px',
-            },
             className="four columns",
         ),
     ], className="row pretty_container"),	
 
     html.Div([
         html.Div(
-        	html.Img(
-        		src=app.get_asset_url('SD Model 2020-02-26.png'),
-    		),
-            className="eight columns",
+            html.Img(
+                src=app.get_asset_url('SD Model 2020-02-26.png'),
+                style = {
+                    'width': '100%',
+                    'height': '100%',
+                },
+            ),
+            className="nine columns",
         ),
         html.Div(
-            className="four columns",
+            className="three columns",
         ),
-    ], className="row pretty_container"),	
+    ], className="row pretty_container"),
+
+    html.Div([
+        html.Div(
+            html.Img(
+                src=app.get_asset_url('Map of the SD Model.png'),
+                style = {
+                    'width': '100%',
+                    'height': '100%',
+                },
+            ),
+            className="twelve columns",
+        ),
+        html.Div(
+            className="zero columns",
+        ),
+    ], className="row pretty_container"),
 
 ])
 
