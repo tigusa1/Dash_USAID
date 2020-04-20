@@ -46,16 +46,12 @@ colors = {
     'text': '#1f77b4'  # dark blue
 }
 
+df = pd.read_excel('deported_children.xlsx', header=5)
 
 # DATA FIGURE
-def deported_children_monthly_plot(pointIndex):
-    df = pd.read_excel('deported_children.xlsx', header=5)
+def deported_children_monthly_plot():
     counter = collections.Counter(df['Month'])
     months = []
-    if pointIndex==2:
-        type = 'bar'
-    else:
-        type = 'line'
     for key in df['Month']:
         if key not in months:
             months.append(key)
@@ -63,10 +59,64 @@ def deported_children_monthly_plot(pointIndex):
         'data': [{
             'x': months,
             'y': [counter[month] for month in months],
-            'type': type,
+            'type': 'bar',
             'name': 'Deported children 2018',
         }]
     }
+
+def deported_children_sex_plot():
+    counter = collections.Counter(df['Sex'])
+    return {
+        'data': [{
+            'x': [key for key in counter.keys()],
+            'y': [counter[key] for key in counter.keys()],
+            'type': 'bar',
+            'name': 'Deported children 2018 Sex',
+        }]
+    }
+
+def deported_children_life_stage_plot():
+    counter = collections.Counter(df['Life stage'])
+    return {
+        'data': [{
+            'x': [key for key in counter.keys()],
+            'y': [counter[key] for key in counter.keys()],
+            'type': 'bar',
+            'name': 'Deported children 2018 Sex',
+        }]
+    }
+
+def deported_children_reasons_for_migration_plot():
+    counter = collections.Counter(df['Reasons for migration'])
+    return {
+        'data': [{
+            'x': [key for key in counter.keys()],
+            'y': [counter[key] for key in counter.keys()],
+            'type': 'bar',
+            'name': 'Deported children 2018 Sex',
+        }]
+    }
+
+def plot_figure(pointIndex=-1):
+    if pointIndex==2:
+        title = 'Monthly Deported Children in 2018'
+        fig = deported_children_monthly_plot()
+    elif pointIndex==3:
+        title = 'Deported Children Sex in 2018'
+        fig = deported_children_sex_plot()
+    elif pointIndex==4:
+        title = 'Deported Children Life Stage in 2018'
+        fig = deported_children_life_stage_plot()
+    elif pointIndex==5:
+        title = 'Deported Children Reasons for Migration in 2018'
+        fig = deported_children_reasons_for_migration_plot()
+    else:
+        title = 'Somethine Else in 2018'
+        return ({'visibility':'hidden'}, deported_children_monthly_plot(), '')
+    return ({'visibility':'visible'}, fig, title)
+
+
+    # Sex Birth date  Interview age   Age group   Life stage  Reasons for migration
 
 # LAYOUT OF THE APP
 app.layout = html.Div(style={'backgroundColor':colors['backgroundColor']}, children=[
@@ -110,7 +160,6 @@ app.layout = html.Div(style={'backgroundColor':colors['backgroundColor']}, child
                 html.H5(children='',
                     id='figure-h'),
                 dcc.Graph(
-                    figure = deported_children_monthly_plot(2),
                     id="figure-graph",
                 )
             ],
@@ -149,14 +198,11 @@ app.layout = html.Div(style={'backgroundColor':colors['backgroundColor']}, child
     [Input('SD-model-image', 'clickData')])
 def display_click_data(clickData):
     if clickData is None:
-        return ({'visibility':'hidden'},deported_children_monthly_plot(2),'')
+        pointIndex = -1
     else:
         pointIndex = clickData["points"][0]["pointIndex"] # needed later
-        if pointIndex==2:
-            title = 'Monthly Deported Children in 2018'
-        else:
-            title = 'Somethine Else in 2018'
-        return ({'visibility':'visible'},deported_children_monthly_plot(pointIndex),title)
+
+    return plot_figure(pointIndex)
 
 if __name__ == '__main__':
     app.run_server(debug=True)
