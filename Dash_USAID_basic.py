@@ -66,9 +66,9 @@ colors = {
     'text': '#1f77b4'  # dark blue
 }
 
-df_children_deportation = pd.read_excel('deported_children.xlsx', header=5)
-df_phiv = pd.read_excel('physical_violence.xlsx')
-df_psyv = pd.read_excel('psychological_violence.xlsx')
+df_children_deportation = pd.read_excel('DEPORTED_CHILDREN.xlsx', header=5)
+df_phiv = pd.read_excel('PHYSICAL_VIOLENCE.xlsx')
+df_psyv = pd.read_excel('PSYCHOLOGICAL_VIOLENCE.xlsx')
 
 # DATA FIGURE
 def deported_children_monthly_plot():
