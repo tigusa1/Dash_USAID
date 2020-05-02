@@ -523,11 +523,13 @@ fig.update_layout(
         title = '',
         showticklabels=False,
         fixedrange= True,
+        tickvals = [v for v in np.arange(0, 1.01, 0.1)],
     ),
     yaxis = go.YAxis(
         title = '',
         showticklabels=False,
         fixedrange= True,
+        tickvals = [v for v in np.arange(0, 1.01, 0.1)],
     ),
 )
 
