@@ -151,7 +151,7 @@ Factors =  {
     'Machismo':{
         'location':{
             'x':0.85,
-            'y':0.3,
+            'y':0.90,
         },
         'text':'Machismo',  
         'value': 0.2,     
@@ -495,6 +495,17 @@ fig.add_trace(
         x=[Stocks[stock_id]['location']['x'] for stock_id in sorted(Stocks.keys())] + [0, 1],
         y=[Stocks[stock_id]['location']['y'] for stock_id in sorted(Stocks.keys())] + [0, 1],
         text = [Stocks[stock_id]['text'] for stock_id in sorted(Stocks.keys())] + ["", ""],
+        hovertemplate = "%{text}",
+        opacity=0.0,
+        name="",
+    )
+)
+# Add factors
+fig.add_trace(
+    go.Scatter(
+        x=[Factors[factor_id]['location']['x'] for factor_id in sorted(Factors.keys())] + [0, 1],
+        y=[Factors[factor_id]['location']['y'] for factor_id in sorted(Factors.keys())] + [0, 1],
+        text = [Factors[factor_id]['text'] for factor_id in sorted(Factors.keys())] + ["", ""],
         hovertemplate = "%{text}",
         opacity=0.0,
         name="",
