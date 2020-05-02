@@ -535,6 +535,7 @@ F_change = np.zeros(len(Factors)) # chaged values based on sliders
 F_original = np.zeros(len(Factors)) # chaged values based on sliders
 F_label = []
 for i, factor_id in enumerate(sorted(Factors.keys())):
+    Factors[factor_id]['index'] = i
     F_change[i] = Factors[factor_id]['value'] # don't copy the object, just the value
     F_original[i] = Factors[factor_id]['value']
     F_label.append(Factors[factor_id]['text'])
@@ -597,9 +598,23 @@ def f(y, t, parameters): # 12 variables
         Stock_flows_in = Stock['flows_in']
         i = Stock['index']
         for flow_id in sorted(Stock_flows_in.keys()): # S_PG, S_MD, ...
-            Flow = Stock_flows_in[flow_id]      
-            v_plus = [Stocks[vid]['value'] if vid in Stocks else Factors[vid]['value'] for vid in Flow['variables_plus']]  # X1, X2, ...
-            v_minus = [Stocks[vid]['value'] if vid in Stocks else Factors[vid]['value'] for vid in Flow['variables_minus']]
+            Flow = Stock_flows_in[flow_id]  
+            v_plus = []
+            v_minus = []
+            for vid in Flow['variables_plus']:
+                if vid in Stocks:
+                    v_plus.append(y_0[Stocks[vid]['index']])
+                    continue
+                else:
+                    v_plus.append(F_0[Factors[vid]['index']])
+                    continue
+            for vid in Flow['variables_minus']:
+                if vid in Stocks:
+                    v_minus.append(y_0[Stocks[vid]['index']])
+                    continue
+                else:
+                    v_minus.append(F_0[Factors[vid]['index']])
+                    continue
             beta = parameters['beta']
             j = Flow['index']
             X_flow_in_j = 1
