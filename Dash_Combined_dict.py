@@ -484,7 +484,8 @@ fig.add_trace(
             'colorscale':'Viridis',
             'color':sens[0],
         },
-        hovertemplate = "x: %{x:.1f}<br> color: %{sens[0]:.3f}",
+        text=sens[0],
+        hovertemplate = 'x: %{x:.1f}<br> color: %{text:.3f}',
         name = "",
     )
 )
@@ -674,7 +675,7 @@ def calc_sensitivities():
     for i in range(len(F_0)):
         sens[i] = calc_sensitivity(i)
 
-# calc_sensitivities()
+calc_sensitivities()
 
 # Dashboard
 def slider_markers(start=0, end=1, step=0.1, red=None):
