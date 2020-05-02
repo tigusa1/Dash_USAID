@@ -8,6 +8,7 @@ import numpy as np
 # from scipy.integrate import odeint
 import plotly.graph_objects as go
 
+
 # APP SETUP
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP,external_stylesheets[0]])
@@ -17,6 +18,17 @@ colors = {
     'background': '#111111',
     'text': '#1f77b4'  # dark blue
 }
+
+# Bundle parameters for ODE solver
+parameters = {
+    't_change':20.0,
+    'beta':20.0
+}
+
+# Make time array for solution
+t_stop = 100.
+t_increment = 0.3
+t = np.arange(0., t_stop, t_increment)
 
 # GM = Gang_Membership
 # IN = Incarceration
@@ -72,6 +84,7 @@ F_0 = [
 
 F_change = np.zeros(len(F_0)) # chaged values based on sliders
 F_original = np.zeros(len(F_0)) # chaged values based on sliders
+
 for i in range(len(F_0)):
     F_change[i] = F_0[i][0] # don't copy the object, just the value
     F_original[i] = F_0[i][0]
@@ -296,6 +309,18 @@ def logistic(x):
 # Note: the flows do not satisfy mass conversation, but this is okay because the stocks have different units
 #   (for instance, the flow into unemployment is many times larger than the flow out of school dropout)
 
+def calc_y(S_values,F_values,P_values):
+    for i in range(len(S_values)):
+        y_0[i] = S_values[i] 
+    for i in range(len(F_values)):
+        F_change[i] = F_values[i] 
+    parameters['t_change'] = P_values[0]
+    parameters['beta'] = P_values[1]
+    # Call the ODE solver
+    # y_t = odeint(f, y_0, t, args=(parameters,))
+    y_t = Euler(f,y_0,t,parameters)
+    return y_t
+
 def f(y, t, parameters): # 12 variables
     S_GM[0], S_IN[0], S_LE[0], S_MD[0], S_PHV[0], S_PG[0], S_PSV[0], S_SD[0], S_SV[0], S_SA[0], S_TM[0], S_UN[0] = y
 
@@ -351,17 +376,150 @@ def Euler(f, y_0, t, parameters):
         y[i+1,:] = y_intermediate
     return y
 
-
-# Bundle parameters for ODE solver
-parameters = {
-    't_change':20.0,
-    'beta':20.0
+# FIGURE AND IMAGE
+fig = go.Figure() # or any Plotly Express function e.g. px.bar(...)
+# Add trace
+fig.add_trace(
+    go.Scatter(
+        x=[0.6, 0.7, 0.85, 0, 1],
+        y=[0.5, 0.5, 0.3,  0, 1],
+        text = ["Psychological Violence", "Physical Violence", "Deportation", "", ""],
+        hovertemplate = "%{text}",
+        opacity=0.0,
+        name="",
+    )
+)
+# Add images
+fig.add_layout_image(
+        dict(
+            source="/assets/SD_Model_2020-02-26.png",
+            xref="x",
+            yref="y",
+            x=0,
+            y=1,
+            sizex=1,
+            sizey=1,
+            # sizing="stretch",
+            opacity=1.0,
+            layer="below",
+            )
+)
+# Sensitivities
+Factors1 =  {
+    'Access_to_Abortion':{
+        'location':{
+            'x':0.85,
+            'y':0.3,
+        },
+        'text':'Access to Abortion',  
+        'value': 0.2,     
+    },
 }
+Stocks1 = {
+    'Gang_Membership':{
+        'flows_in':{
+            'Positive_Gang_Perception':{
+                'variables_plus': ['Deportation'],
+                'variables_minus': ['Law_Enforcement', 'Family_Cohesion', 'Mental_Health'],
+            },
+            'Migration_Displacement':{
+                'variables_plus': ['Deportation'],
+                'variables_minus': [],
+            },
+        },
+        'location':{
+            'x':0.85,
+            'y':0.3,
+        },
+        'text':'Gang Membership',  
+        'value': 0.4,
+        'rate' : 0.03,
+        'slope' : 0.4,
+        'lower' : 0.3,
+    },
+    'Gang_Membership1':{
+        'flows_in':{
+            'Positive_Gang_Perception':{
+                'variables_plus': ['Deportation'],
+                'variables_minus': ['Law_Enforcement', 'Family_Cohesion', 'Mental_Health'],
+            },
+            'Migration_Displacement':{
+                'variables_plus': ['Deportation'],
+                'variables_minus': [],
+            },
+        },
+        'location':{
+            'x':0.15,
+            'y':0.3,
+        },
+        'text':'Gang Membership',  
+        'value': 0.4,
+        'rate' : 0.03,
+        'slope' : 0.4,
+        'lower' : 0.3,
+    },
+}
+S_values_global = np.array(S_0)
+F_values_global = np.array(F_0)
+delta = 0.01
 
-# Make time array for solution
-t_stop = 100.
-t_increment = 0.3
-t = np.arange(0., t_stop, t_increment)
+def calc_sensitivity(i):
+    global F_change
+    F_change_original = np.array(F_change)
+    F_change[i] += delta
+    y_t_delta= Euler(f,S_values_global,t,parameters)
+    F_change = np.array(F_change_original)
+    y_t      = Euler(f,S_values_global,t,parameters)
+    Dy = (y_t_delta[-1,:] - y_t[-1,:])/delta
+    return Dy
+
+sensitivities = [0.2, 0.8] # clickData https://dash.plotly.com/interactive-graphing
+stocks_x = []
+stocks_y = []
+for s in Stocks1:
+    stocks_x.append(Stocks1[s]['location']['x'])
+    stocks_y.append(Stocks1[s]['location']['y'])
+
+sens = np.zeros((len(F_0),len(Stocks)))
+
+def calc_sensitivities():
+    for i in range(len(F_0)):
+        sens[i] = calc_sensitivity(i)
+
+calc_sensitivities()
+
+fig.add_trace(
+    go.Scatter(
+        x=stocks_x,
+        y=stocks_y,
+        mode = 'markers',
+        marker = {
+            'symbol':'square',
+            'size':20,
+            'colorscale':'Viridis',
+            'color':sens[0][0:2],
+        },
+    )
+)
+# Set templates
+fig.update_layout(
+    width=800,
+    height=550,
+    margin=dict(l=20, r=20, t=20, b=20),
+    showlegend = False,
+    template="plotly_white", # white background
+    clickmode='event+select',
+    xaxis = go.XAxis(
+        title = '',
+        showticklabels=False,
+        fixedrange= True,
+    ),
+    yaxis = go.YAxis(
+        title = '',
+        showticklabels=False,
+        fixedrange= True,
+    ),
+)
 
 # Dashboard
 def slider_markers(start=0, end=1, step=0.1, red=None):
@@ -385,7 +543,7 @@ def make_slider(i,slider_label,slider_type,default_value,min_value=0,max_value=1
             max=max_value,
             value=default_value,
             marks=slider_markers(min_value, max_value, (max_value-min_value)/5, default_value),
-            step=None
+            step=(max_value-min_value)/100,
         ),
     ])
 
@@ -403,74 +561,69 @@ F_sliders = many_sliders()
 app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     dbc.Row([
         dbc.Col([
-            dcc.Graph(id='plot_stocks',config={'displayModeBar': False})
-        ],width=8),
+            dcc.Graph(
+                figure=fig,
+                id="SD-model-image",
+                config={
+                    'displayModeBar': False
+                },
+            ),
+        ], width=6),
         dbc.Col([
-            dbc.Col(html.H5('Initial Stock Values'),width=12),
+            dcc.Graph(id='plot_stocks',config={'displayModeBar': False}),
             dbc.Row([
                 dbc.Col([
-                    html.Div([
-                        make_slider(i,S_label[i],'S_slider',S_0[i]) for i in range(0,6)
+                    html.Div(id='dynamic-slider'),
+                    html.Button("Show All Parameters",id={'type':'modal-open','index':0},style ={'float':'right','margin-top':'0px'}),
+                    ], width = 12)
+            ]),
+        ],width=6),
+    ]),
+
+    dbc.Modal([
+        dbc.ModalHeader([
+            "",
+            dbc.Button("Close", id={'type':'modal-close','index':0}, className="ml-auto", style={'position':'absolute','right': 20}),
+        ]),
+        dbc.ModalBody([
+            dbc.Row([
+                dbc.Col([
+                    dbc.Col(html.H5('Initial Stock Values'),width=12),
+                    dbc.Row([
+                        dbc.Col([
+                            html.Div([
+                                make_slider(i,S_label[i],'S_slider',S_0[i]) for i in range(0,6)
+                            ]),
+                        ],width=6),
+                        dbc.Col([
+                            html.Div([
+                                make_slider(i,S_label[i],'S_slider',S_0[i]) for i in range(6,len(S_0))
+                            ]),
+                        ],width=6),
                     ]),
-                ],width=6),
+                ],width=12),
+            ],className="pretty_container"),
+            dbc.Row([
+                dbc.Col(html.H5('Run parameters'),width=3),
                 dbc.Col([
                     html.Div([
-                        make_slider(i,S_label[i],'S_slider',S_0[i]) for i in range(6,len(S_0))
+                        make_slider(0,'t_change','P_slider',parameters['t_change'],0,100)
                     ]),
-                ],width=6),
-            ]),
-        ],width=4),
-    ],className="pretty_container"),
-
-    dbc.Row([
-        dbc.Col(html.H5('Sensitivity'),width=3),
-        dbc.Col([
-            html.Button(
-                F_label[11],
-                id={'type':'sensitivity_variable','index':11},
-                n_clicks=0,
+                ],width=3),
+                dbc.Col([
+                    html.Div([
+                        make_slider(1,'beta','P_slider',parameters['beta'],0,100)
+                    ]),
+                ],width=3),
+            ],className="pretty_container"),
+            dbc.Row([
+                dbc.Col(html.H5('Factors'),width=12),
+                F_sliders,
+                ],className="pretty_container"
             ),
-        ],width=3),
-        dbc.Col([
-            html.Div('',id={'type':'sensitivity_output','index':11}),
-        ], width=3),
-    ],  className="pretty_container"),
-
-    dbc.Row([
-        dbc.Col(html.H5('Run parameters'),width=3),
-        dbc.Col([
-            html.Div([
-                make_slider(0,'t_change','P_slider',parameters['t_change'],0,100)
-            ]),
-        ],width=3),
-        dbc.Col([
-            html.Div([
-                make_slider(1,'beta','P_slider',parameters['beta'],0,100)
-            ]),
-        ],width=3),
-    ],className="pretty_container"),
-
-    dbc.Row([
-        dbc.Col(html.H5('Factors'),width=12),
-        F_sliders,
-        ],className="pretty_container"
-    ),
+        ]),
+    ], id={'type':"modal",'index':0}, size='xl'),
 ])
-
-S_values_global = np.array(S_0)
-F_values_global = np.array(F_0)
-
-def calc_y(S_values,F_values,P_values):
-    for i in range(len(S_values)):
-        y_0[i] = S_values[i] 
-    for i in range(len(F_values)):
-        F_change[i] = F_values[i] 
-    parameters['t_change'] = P_values[0]
-    parameters['beta'] = P_values[1]
-    # Call the ODE solver
-    # y_t = odeint(f, y_0, t, args=(parameters,))
-    y_t = Euler(f,y_0,t,parameters)
-    return y_t
 
 @app.callback(
     dash.dependencies.Output('plot_stocks', 'figure'),
@@ -495,21 +648,47 @@ def update_graph(S_values,F_values,P_values):
         },
     }
 
-delta = 0.1
 @app.callback(
-    Output({'type':'sensitivity_output','index':MATCH},'children'),
-  [ Input({'type':'sensitivity_variable','index':MATCH},'n_clicks') ],
-  [ State({'type':'sensitivity_variable','index':MATCH},'id') ]
+    [Output({'type':'S_slider','index':i}, 'value') for i in range(len(S_label))]
+   +[Output({'type':'F_slider','index':i}, 'value') for i in range(len(F_label))],
+    [Input('SD-model-image', 'clickData'),
+     Input({'type':'N_slider','index':0}, 'value')],
+    [State({'type':'S_slider','index':ALL}, 'value'),
+     State({'type':'F_slider','index':ALL}, 'value'),]
 )
-def calc_sensitivity(n,id_match):
-    i = id_match['index']
-    F_values_delta = F_values_global
-    F_values_delta[i] = F_values_global[i] + 0.01
-    P_values = np.array([ parameters['t_change'], parameters['beta']])
-    y_t      = calc_y(S_values_global,F_values_global,P_values)
-    y_t_delta= calc_y(S_values_global,F_values_delta, P_values)
-    Dy = (y_t_delta[-1] - y_t[-1])/delta
-    return Dy[0]
+def update_slider_value(clickData,dynamic_slider_value,S_values,F_values):
+    if clickData is None:
+        return S_values + F_values
+    text = clickData["points"][0]['text']
+    text_noseparator= "".join(text.split())
+    for i, label in enumerate(S_label):
+        if "".join(label.split('_')).lower() == text_noseparator.lower():
+            print("found")
+            S_values[i] = dynamic_slider_value
+    for i, label in enumerate(F_label):
+        if "".join(label.split('_')).lower() == text_noseparator.lower():
+            F_values[i] = dynamic_slider_value
+    return S_values + F_values
+# CALLBACKS
+@app.callback(Output('dynamic-slider', 'children'),
+    [Input('SD-model-image', 'clickData')])
+def update_dynamic_slider(clickData):
+    if clickData is None:
+        return make_slider(0,'choose a factor','N_slider',0)
+    pointIndex = clickData["points"][0]["pointIndex"] # needed later
+    text = clickData["points"][0]['text']
+    return make_slider(0, text, 'N_slider', 0)
+
+@app.callback(
+    Output({'type':"modal",'index':MATCH}, "is_open"),
+    [Input({'type':"modal-open",'index':MATCH}, "n_clicks"),
+     Input({'type':"modal-close",'index':MATCH}, "n_clicks")],
+    [State({'type':"modal",'index':MATCH}, "is_open")],
+)
+def toggle_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
 
 # CAN LEAVE IN FOR PYTHONEVERYWHERE
 if __name__ == '__main__':
