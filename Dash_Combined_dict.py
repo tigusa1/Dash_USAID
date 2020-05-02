@@ -456,11 +456,10 @@ fig.add_layout_image(
         source="/assets/SD_Model_2020-02-26.png",
         xref="x",
         yref="y",
-        x=0,
-        y=1,
-        sizex=1,
-        sizey=1,
-        # sizing="stretch",
+        x=-0.06,
+        y=1.065,
+        sizex=1.13,
+        sizey=1.13,
         opacity=1.0,
         layer="below",
     )
@@ -513,9 +512,10 @@ fig.add_trace(
 )
 # Set templates
 fig.update_layout(
-    width=800,
-    height=550,
-    margin=dict(l=20, r=20, t=20, b=20),
+    width=800*1.35,
+    height=550*1.4,
+    autosize=False,
+    margin=dict(l=0, r=0, t=0, b=0),
     template="plotly_white", # white background
     showlegend = False,
     clickmode='event+select',
@@ -657,7 +657,7 @@ def calc_sensitivities():
     for i in range(len(F_0)):
         sens[i] = calc_sensitivity(i)
 
-calc_sensitivities()
+# calc_sensitivities()
 
 # Dashboard
 def slider_markers(start=0, end=1, step=0.1, red=None):
@@ -706,7 +706,7 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
                     'displayModeBar': False
                 },
             ),
-            width=6,
+            width=8,
         ),
         dbc.Col([
             dcc.Graph(id='plot_stocks',config={'displayModeBar': False}),
@@ -716,7 +716,7 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
                     html.Button("Show All Parameters",id={'type':'modal-open','index':0},style ={'float':'right','margin-top':'0px'}),
                     ], width = 12)
             ]),
-        ],width=6),
+        ],width=4),
     ]),
 
     dbc.Modal([
