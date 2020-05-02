@@ -819,8 +819,6 @@ def update_slider_value(clickData,dynamic_slider_value,S_values,F_values):
             S_values[i] = dynamic_slider_value
     for i, label in enumerate(F_label):
         if label == text:
-            print("found")
-
             F_values[i] = dynamic_slider_value
     return S_values + F_values
 
