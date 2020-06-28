@@ -581,14 +581,14 @@ def SD_fig(sensitivities=None):
             showticklabels=False,
             fixedrange= True,
             tickvals = [v for v in np.arange(0, 1.01, 0.1)],
-            range  = [-.06,1.1],
+            range  = [background_figure_x, background_figure_x + background_figure_sizex],
         ),
         yaxis = dict(
             title = '',
             showticklabels=False,
             fixedrange= True,
             tickvals = [v for v in np.arange(0, 1.01, 0.1)],
-            range  = [-.07,1.08],
+            range  = [background_figure_y - background_figure_sizey, background_figure_y],
         ),
     )
     return fig
