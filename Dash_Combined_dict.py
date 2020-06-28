@@ -460,8 +460,7 @@ factors_text = []
 for idx, f in enumerate(Factors.keys()):
     Factor = Factors[f]
     Factor['location']['x'] = Factor['location']['x'] * background_figure_sizex
-    Factor['location']['y'] = (Factor['location']['y'] - 1) * background_figure_sizey
-    print(Factor['location'])
+    Factor['location']['y'] = Factor['location']['y'] * background_figure_sizey
     Factor['index'] = idx
     F_change[idx] = Factor['value'] # don't copy the object, just the value
     F_original[idx] = Factor['value']
@@ -482,7 +481,7 @@ stocks_text = []
 for idx, s in enumerate(Stocks.keys()): # S_GM, S_IN, ...
     Stock = Stocks[s]
     Stock['location']['x'] = Stock['location']['x'] * background_figure_sizex
-    Stock['location']['y'] = (Stock['location']['y'] - 1) * background_figure_sizey
+    Stock['location']['y'] = Stock['location']['y'] * background_figure_sizey
     Stock['rate'] = 0.03
     Stock['slope'] = 0.4
     Stock['lower'] = 0.3
@@ -511,7 +510,7 @@ def SD_fig(sensitivities=None):
             xref="x",
             yref="y",
             x=0,
-            y=0,
+            y=background_figure_sizey,
             sizex=background_figure_sizex,
             sizey=background_figure_sizey,
             opacity=1.0,
@@ -586,7 +585,7 @@ def SD_fig(sensitivities=None):
             showticklabels=False,
             fixedrange= True,
             tickvals = [v for v in np.arange(0, 1.01, 0.1)],
-            range  = [-background_figure_sizey, 0],
+            range  = [0, background_figure_sizey],
         ),
     )
     return fig
