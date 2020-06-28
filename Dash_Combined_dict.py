@@ -527,7 +527,7 @@ def SD_fig(sensitivities=None):
                 'color':sensitivities,
             },
             text=sensitivities,
-            hovertemplate = 'sensitivity: %{text:.3f}',
+            hovertemplate = 'sensitivity: %{text:.2f}',
             name = "",
             visible = sensitivities_visible,
         )
@@ -901,13 +901,14 @@ def update_graph(S_values,F_values,P_values):
         'data':[{
             'x': t,
             'y': y_t[:,k],
-            'name': S_label[k]
+            'name': S_label[k],
+            'hovertemplate':'%{y:.2f}'
         } for k in range(len(S_label))],
         'layout': {
             'title':'Stocks over time (using artificial data)',
             'xaxis':{'title':'Time (months)'},
             'yaxis':{'title':'Stocks (normalized units)'}
-        },
+        }
     }
 
 @app.callback(
