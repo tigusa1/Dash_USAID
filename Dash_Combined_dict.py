@@ -12,6 +12,10 @@ import plotly.graph_objects as go
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP,external_stylesheets[0]])
 app.config.suppress_callback_exceptions = True
+background_figure_x     = -0.06
+background_figure_y     = 1.065
+background_figure_sizex = 1.13
+background_figure_sizey = 1.13
 
 colors = {
     'background': '#111111',
@@ -22,184 +26,184 @@ colors = {
 Factors =  {
     'Access_to_Abortion':{
         'location':{
-            'x':0.85,
-            'y':0.3,
+            'x':0.585,
+            'y':0.754,
         },
         'text':'Access to Abortion',  
         'value': 0.2,     
     },
     'Access_to_Contraception':{
         'location':{
-            'x':0.75,
-            'y':0.3,
+            'x':0.55,
+            'y':0.6,
         },
         'text':'Access to Contraception',   
         'value': 0.2,    
     },
     'Bad_Governance':{
         'location':{
-            'x':0.65,
-            'y':0.3,
+            'x':0.88,
+            'y':0.18,
         },
         'text':'Bad Governance',  
         'value': 0.2,     
     },
     'Bully':{
         'location':{
-            'x':0.55,
-            'y':0.3,
+            'x':0.72,
+            'y':0.71,
         },
         'text':'Bully',   
         'value': 0.2,       
     },
     'Deportation':{
         'location':{
-            'x':0.45,
-            'y':0.3,
+            'x':0.9,
+            'y':0.31,
         },
         'text':'Deportation',   
         'value': 0.2,    
     },
     'Economy':{
         'location':{
-            'x':0.35,
-            'y':0.3,
+            'x':0.92,
+            'y':0.69,
         },
         'text':'Economy',   
         'value': 0.2,    
     },
     'Economy_Opportunities':{
         'location':{
-            'x':0.25,
-            'y':0.3,
+            'x':0.88,
+            'y':0.86,
         },
         'text':'Economy Opportunities', 
         'value': 0.2,      
     },
     'Exposure_to_Violent_Media':{
         'location':{
-            'x':0.15,
-            'y':0.3,
+            'x':0.04,
+            'y':0.9,
         },
         'text':'Exposure to Violent Media',  
         'value': 0.2,     
     },
     'Extortion':{
         'location':{
-            'x':0.85,
-            'y':0.4,
+            'x':0.67,
+            'y':0.92,
         },
         'text':'Extortion',   
         'value': 0.2,    
     },
     'Family_Breakdown':{
         'location':{
-            'x':0.75,
-            'y':0.4,
+            'x':0.345,
+            'y':0.8,
         },
         'text':'Family Breakdown',  
         'value': 0.2,     
     },
     'Family_Cohesion':{
         'location':{
-            'x':0.65,
-            'y':0.4,
+            'x':0.53,
+            'y':0.195,
         },
         'text':'Family Cohesion', 
         'value': 0.2,         
     },
     'Gang_Affiliation':{
         'location':{
-            'x':0.55,
-            'y':0.4,
+            'x':0.43,
+            'y':0.41,
         },
         'text':'Gang Affiliation',   
         'value': 0.2,    
     },
     'Gang_Cohesion':{
         'location':{
-            'x':0.45,
-            'y':0.4,
+            'x':0.63,
+            'y':0.34,
         },
         'text':'Gang Cohesion',   
         'value': 0.2,    
     },
     'Gang_Control':{
         'location':{
-            'x':0.35,
-            'y':0.4,
+            'x':0.34,
+            'y':0.585,
         },
         'text':'Gang Control', 
         'value': 0.2,      
     },
     'Interventions':{
         'location':{
-            'x':0.25,
-            'y':0.4,
+            'x':0.59,
+            'y':0.795,
         },
         'text':'Interventions',  
         'value': 0.2,     
     },
     'Impunity_Governance':{
         'location':{
-            'x':0.85,
-            'y':0.3,
+            'x':0.56,
+            'y':0.04,
         },
         'text':'Impunity Governance',   
         'value': 0.2,    
     },
     'Machismo':{
         'location':{
-            'x':0.975,
-            'y':0.95,
+            'x':0.93,
+            'y':0.9,
         },
         'text':'Machismo',  
         'value': 0.2,     
     },
     'Mental_Health':{
         'location':{
-            'x':0.85,
-            'y':0.3,
+            'x':0.26,
+            'y':0.53,
         },
         'text':'Mental Health', 
         'value': 0.2,         
     },
     'Neighborhood_Stigma':{
         'location':{
-            'x':0.85,
-            'y':0.3,
+            'x':0.875,
+            'y':0.62,
         },
         'text':'Neighborhood Stigma',   
         'value': 0.2,    
     },
     'School_Quality':{
         'location':{
-            'x':0.85,
-            'y':0.3,
+            'x':0.72,
+            'y':0.745,
         },
         'text':'School Quality',   
         'value': 0.2,    
     },
     'Territorial_Fights':{
         'location':{
-            'x':0.85,
-            'y':0.3,
+            'x':0.7,
+            'y':0.36,
         },
         'text':'Territorial Fights', 
         'value': 0.2,      
     },
     'Victimizer':{
         'location':{
-            'x':0.85,
-            'y':0.3,
+            'x':0.38,
+            'y':0.55,
         },
         'text':'Victimizer',  
         'value': 0.2,     
     },
     'Youth_Empowerment':{
         'location':{
-            'x':0.85,
-            'y':0.3,
+            'x':0.72,
+            'y':0.79,
         },
         'text':'Youth Empowerment',   
         'value': 0.2,    
@@ -221,8 +225,8 @@ Stocks = {
         'value':0.2,
         'text':'Gang Membership',
         'location':{
-            'x':0.14,
-            'y':0.37,
+            'x':0.19,
+            'y':0.35,
         },
     },
     'Incarceration':{
@@ -235,8 +239,8 @@ Stocks = {
         'value':0.4,
         'text':'Incarceration',
         'location':{
-            'x':0.04,
-            'y':0.12,
+            'x':0.09,
+            'y':0.125,
         },
     },
     'Law_Enforcement':{
@@ -254,7 +258,7 @@ Stocks = {
         'text':'Law Enforcement',
         'location':{
             'x':0.57,
-            'y':0.12,
+            'y':0.125,
         },
     },
     'Migration_Displacement':{
@@ -271,8 +275,8 @@ Stocks = {
         'value':0.4, 
         'text':'Migration Displacement',
         'location':{
-            'x':1.03,
-            'y':0.5,
+            'x':0.96,
+            'y':0.485,
         },
 
     },
@@ -302,8 +306,8 @@ Stocks = {
         'value':0.4,
         'text':'Positive Gang Perception',
         'location':{
-            'x':0.15,
-            'y':0.73,
+            'x':0.185,
+            'y':0.69,
         },
     },
     'Physical_Violence':{
@@ -320,8 +324,8 @@ Stocks = {
         'value':0.4,
         'text':'Physical Violence',
         'location':{
-            'x':0.82,
-            'y':0.5,
+            'x':0.78,
+            'y':0.48,
         },
     },
     'Psychological_Violence':{
@@ -346,8 +350,8 @@ Stocks = {
         'value':0.4,
         'text':'Psychological Violence',
         'location':{
-            'x':0.64,
-            'y':0.5,
+            'x':0.62,
+            'y':0.48,
         },
     },
     'School_Dropouts':{
@@ -368,8 +372,8 @@ Stocks = {
         'value':0.4,
         'text':'School Dropouts',
         'location':{
-            'x':0.67,
-            'y':0.92,
+            'x':0.66,
+            'y':0.865,
         },
     },
     'Sexual_Violence':{
@@ -394,8 +398,8 @@ Stocks = {
         'value':0.4,
         'text':'Sexual Violence',
         'location':{
-            'x':0.43,
-            'y':0.5,
+            'x':0.44,
+            'y':0.475,
         },
     },
     'Substance_Abuse':{
@@ -408,8 +412,8 @@ Stocks = {
         'value':0.4,
         'text':'Substance Abuse',
         'location':{
-            'x':0.54,
-            'y':0.37,
+            'x':0.53,
+            'y':0.345,
         },
     },
     'Teenager_Mothers':{
@@ -422,8 +426,8 @@ Stocks = {
         'value':0.4,
         'text':'Teenager Mothers',
         'location':{
-            'x':0.53,
-            'y':0.76,
+            'x':0.515,
+            'y':0.715,
         },
     },
     'Unemployment':{
@@ -436,8 +440,8 @@ Stocks = {
         'value':0.4,
         'text':'Unemployment',
         'location':{
-            'x':0.33,
-            'y':1.02,
+            'x':0.34,
+            'y':0.96,
         },
     },
 }
@@ -457,6 +461,9 @@ factors_y = []
 factors_text = []
 for idx, f in enumerate(Factors.keys()):
     Factor = Factors[f]
+    Factor['location']['x'] = Factor['location']['x'] * background_figure_sizex + background_figure_x
+    Factor['location']['y'] = (Factor['location']['y'] - 1) * background_figure_sizey + background_figure_y
+    print(Factor['location'])
     Factor['index'] = idx
     F_change[idx] = Factor['value'] # don't copy the object, just the value
     F_original[idx] = Factor['value']
@@ -476,6 +483,8 @@ stocks_y = []
 stocks_text = []
 for idx, s in enumerate(Stocks.keys()): # S_GM, S_IN, ...
     Stock = Stocks[s]
+    Stock['location']['x'] = Stock['location']['x'] * background_figure_sizex + background_figure_x
+    Stock['location']['y'] = (Stock['location']['y'] - 1) * background_figure_sizey + background_figure_y
     Stock['rate'] = 0.03
     Stock['slope'] = 0.4
     Stock['lower'] = 0.3
@@ -503,10 +512,10 @@ def SD_fig(sensitivities=None):
             source="/assets/SD_Model_2020-02-26.png",
             xref="x",
             yref="y",
-            x=-0.06,
-            y=1.065,
-            sizex=1.13,
-            sizey=1.13,
+            x=background_figure_x,
+            y=background_figure_y,
+            sizex=background_figure_sizex,
+            sizey=background_figure_sizey,
             opacity=1.0,
             layer="below",
         )
