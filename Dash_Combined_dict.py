@@ -865,7 +865,7 @@ def update_dynamic_slider(clickData,radio,dynamic_slider,prior_label,previous_ra
     elif radio=='sensitivities':
         if previous_radio=='sensitivities':
             sens = calc_sensitivity(idx)
-            sens /= max(sens)
+            sens /= max(abs(sens))
             fig = SD_fig(sensitivities=sens)
             return ('Select a factor',fig,label,radio)
         else:
