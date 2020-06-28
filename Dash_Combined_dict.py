@@ -12,8 +12,6 @@ import plotly.graph_objects as go
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP,external_stylesheets[0]])
 app.config.suppress_callback_exceptions = True
-background_figure_x     = -0.06
-background_figure_y     = 1.065
 background_figure_sizex = 1.13
 background_figure_sizey = 1.13
 
@@ -461,8 +459,8 @@ factors_y = []
 factors_text = []
 for idx, f in enumerate(Factors.keys()):
     Factor = Factors[f]
-    Factor['location']['x'] = Factor['location']['x'] * background_figure_sizex + background_figure_x
-    Factor['location']['y'] = (Factor['location']['y'] - 1) * background_figure_sizey + background_figure_y
+    Factor['location']['x'] = Factor['location']['x'] * background_figure_sizex
+    Factor['location']['y'] = (Factor['location']['y'] - 1) * background_figure_sizey
     print(Factor['location'])
     Factor['index'] = idx
     F_change[idx] = Factor['value'] # don't copy the object, just the value
@@ -483,8 +481,8 @@ stocks_y = []
 stocks_text = []
 for idx, s in enumerate(Stocks.keys()): # S_GM, S_IN, ...
     Stock = Stocks[s]
-    Stock['location']['x'] = Stock['location']['x'] * background_figure_sizex + background_figure_x
-    Stock['location']['y'] = (Stock['location']['y'] - 1) * background_figure_sizey + background_figure_y
+    Stock['location']['x'] = Stock['location']['x'] * background_figure_sizex
+    Stock['location']['y'] = (Stock['location']['y'] - 1) * background_figure_sizey
     Stock['rate'] = 0.03
     Stock['slope'] = 0.4
     Stock['lower'] = 0.3
@@ -512,8 +510,8 @@ def SD_fig(sensitivities=None):
             source="/assets/SD_Model_2020-02-26.png",
             xref="x",
             yref="y",
-            x=background_figure_x,
-            y=background_figure_y,
+            x=0,
+            y=0,
             sizex=background_figure_sizex,
             sizey=background_figure_sizey,
             opacity=1.0,
@@ -581,14 +579,14 @@ def SD_fig(sensitivities=None):
             showticklabels=False,
             fixedrange= True,
             tickvals = [v for v in np.arange(0, 1.01, 0.1)],
-            range  = [background_figure_x, background_figure_x + background_figure_sizex],
+            range  = [0, background_figure_sizex],
         ),
         yaxis = dict(
             title = '',
             showticklabels=False,
             fixedrange= True,
             tickvals = [v for v in np.arange(0, 1.01, 0.1)],
-            range  = [background_figure_y - background_figure_sizey, background_figure_y],
+            range  = [-background_figure_sizey, 0],
         ),
     )
     return fig
