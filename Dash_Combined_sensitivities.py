@@ -1,6 +1,6 @@
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc
+from dash import html
 from dash.dependencies import Input, Output, State, MATCH, ALL
 import dash_bootstrap_components as dbc
 
@@ -509,12 +509,12 @@ fig.update_layout(
     showlegend = False,
     template="plotly_white", # white background
     clickmode='event+select',
-    xaxis = go.XAxis(
+    xaxis = go.layout.XAxis(
         title = '',
         showticklabels=False,
         fixedrange= True,
     ),
-    yaxis = go.YAxis(
+    yaxis = go.layout.YAxis(
         title = '',
         showticklabels=False,
         fixedrange= True,
