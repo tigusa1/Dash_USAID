@@ -272,13 +272,13 @@ def calc_y(S_values, F_values, P_values):
 
         L2_target_0   = 0.9 * L2_HF[t] # combined targets of L2_HR and L2_S =0.9*target of L2_HF
         L2_HR_target  = L2_target_0 * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
-        L2_S_target   = L2_target_0 * logistic([-Lack_action_depletion, Pos_supply_chain, Neg_supply_chain, -L2_demand,2])
+        L2_S_target   = L2_target_0 * logistic([-Lack_action_depletion, Pos_supply_chain, -Neg_supply_chain, -L2_demand,2])
         dL2_HR_in     = L2_HF[t]
         dL2_S_in      = L2_HF[t]
         # dL2_HF_out = dL2_HR_in + dL2_S_in
         L4_target_0   = 0.9 * L4_HF[t]
         L4_HR_target  = L4_target_0 * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
-        L4_S_target   = L4_target_0 * logistic([-Lack_action_depletion, Pos_supply_chain, Neg_supply_chain, -L4_demand,2])
+        L4_S_target   = L4_target_0 * logistic([-Lack_action_depletion, Pos_supply_chain, -Neg_supply_chain, -L4_demand,2])
         dL4_HR_in     = L4_HF[t]
         dL4_S_in      = L4_HF[t]
         # dL4_HF_out = dL4_HR_in + dL4_S_in
