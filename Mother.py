@@ -9,13 +9,15 @@ class Mother:
         self._age = age
         self._no_children = no_children
 
-        self._gest_age = -(np.int(np.random.randint(-7, max_gest_age, 1)))
+        self._gest_age = -(np.int(np.random.randint(-8, max_gest_age, 1)))
         self.logit_health = 0.8 + 0.2 * (np.random.uniform(-1, 1, 1))
+        self._health = logistic(self.logit_health)
         self._predisp_ANC = 0.4 + 0.2 * (np.random.uniform(-1, 1, 1))
 
         self._delivery = None
         self._facility = None
         self._anc = 0
+        self.delivered = False # needed to count the number of deliveries per month
 
     def visit_anc(self):
         """go to ANC if predisposition for it, changes health"""
@@ -48,6 +50,7 @@ class Mother:
 
     def deliver(self):
         """delivery outcome"""
+        self.delivered = True
         if logistic([self.logit_health]) < np.random.uniform(0, 1, 1):
             self._delivery = -1
         else:

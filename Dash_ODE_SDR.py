@@ -206,7 +206,7 @@ def calc_y(S_values, F_values, P_values):
     # anc_t, health_t, gest_age_t, deliveries, facilities = [[]]*nt, [[]]*nt, [[]]*nt, [[]]*nt, [[]]*nt # NG
     num_deliver_home, num_deliver_2, num_deliver_4, num_deliver_total = \
         np.zeros(nt), np.zeros(nt), np.zeros(nt), np.zeros(nt)
-    pos_HO, neg_HO = np.zeros([nt,3]), np.zeros([nt,3])
+    pos_HO, neg_HO, L2_D_Capacity, L4_D_Capacity = np.zeros([nt,3]), np.zeros([nt,3]), np.ones(nt), np.ones(nt)
 
     for i in range(len(S_values)):
         y_t[0,i] = S_values[i]
@@ -234,12 +234,14 @@ def calc_y(S_values, F_values, P_values):
             globals()[d_name + '_in'] = 0.0
             globals()[d_name + '_out'] = 0.0
 
-        if t == 0:
-            L2_demand = 0
-            L4_demand = 0
-        else:
-            L2_demand = logistic(num_deliver_2[t] / (L2_DC[t] * BL_Capacity_factor))
-            L4_demand = logistic(num_deliver_4[t] / (L4_DC[t] * BL_Capacity_factor))
+        # if t == 0:
+        #     L2_demand = 0
+        #     L4_demand = 0
+        # else:
+        L2_D_Capacity[t] = L2_DC[t] * BL_Capacity_factor
+        L4_D_Capacity[t] = L4_DC[t] * BL_Capacity_factor
+        L2_demand = logistic(num_deliver_2[t] / (L2_D_Capacity[t]))
+        L4_demand = logistic(num_deliver_4[t] / (L4_D_Capacity[t]))
 
         neg_HO_t = sum(neg_HO[0:t+1,:])
         if neg_HO_t[0] == 0:
@@ -315,17 +317,14 @@ def calc_y(S_values, F_values, P_values):
 
         # neg_home   = neg_H0[t+1,2]
 
-        fac_t  = np.array(facilities[t])
-        fac_t1 = sum(fac_t == 1)
-        # fac_t2 = sum(fac_t == 2)
+        L2_deliveries = 0
         for mother in mothers:
-            fac = np.array(facility)
-            fac1 = sum(fac == 1)
-            den = L2_DC[t]*BL_Capacity_factor
+            L2_net_capacity = 1 - L2_deliveries / L2_D_Capacity[t]
             mother.increase_age(l4_quality, l2_quality, proximity, L2_4_health_outcomes,
-                1 - (fac1 - fac_t1) / den,
-                None) # don't need the last argument
-                # 1 - (sum(fac == 2) - fac_t2) / (L4_DC[t] * BL_Capacity_factor))
+                                L2_net_capacity, None)  # don't need the last argument
+            if mother.delivered:
+                L2_deliveries += 1
+                mother.delivered = False  # reset
             # mother.increase_age(quality, proximity)
             gest_age.append(mother._gest_age) # done
             health.append(float(mother._health)) # done
@@ -352,7 +351,9 @@ def calc_y(S_values, F_values, P_values):
             pos_HO[t+1,2-k] = sum((del_t1 ==  1) & (fac_t1 == k)) - sum((del_t ==  1) & (fac_t == k))
             neg_HO[t+1,2-k] = sum((del_t1 == -1) & (fac_t1 == k)) - sum((del_t == -1) & (fac_t == k))
 
-    return t_all, y_t, [num_deliver_4,num_deliver_2,num_deliver_home,num_deliver_total], [pos_HO,neg_HO]
+    return t_all, y_t, \
+           [ num_deliver_4, num_deliver_2, num_deliver_home, num_deliver_total, L4_D_Capacity, L2_D_Capacity ],\
+           [ pos_HO, neg_HO ]
 
 # FOR OTHER PLOTTING METHODS
 # gest_age_t = pd.DataFrame.from_dict(gest_age_t)
@@ -363,61 +364,6 @@ def calc_y(S_values, F_values, P_values):
 
 def logistic(x):
     return 1 / (1 + np.exp(-np.mean(x)))
-
-def f(y, t, parameters): # 12 variables
-    S_RR[0], S_R2[0], S_R4[0], S_RS[0], S_PDS[0] = y
-
-    if t>parameters['t_change']:
-        for i in range(len(F_0)):
-            F_0[i][0] = F_change[i]
-    else:
-        for i in range(len(F_0)):
-            F_0[i][0] = F_original[i]
-
-    D_y = np.zeros(len(y))
-
-    Xb = np.zeros(len(y))
-    for stock in Stocks: # S_GM, S_IN, ...
-        Stock = Stocks[stock]
-        Stock_flows_in = Stock['flows_in']
-        i = Stock['index']
-        for flow in Stock_flows_in: # S_PG, S_MD, ...
-            Flow = Stock_flows_in[flow]            
-            v_plus = Flow['variables_plus'] # X1, X2, ...
-            v_minus = Flow['variables_minus']
-            beta = parameters['beta']
-            j = Flow['index']
-            X_flow_in_j = 1
-            X_flow_in_j += sum(X[0] for X in v_plus) - sum(X[0] for X in v_minus)
-            Xb_flow_in_j =  y[j]*beta*X_flow_in_j
-            Xb[i] += Xb_flow_in_j
-            Xb[j] += -Xb_flow_in_j
-
-    for stock in Stocks:
-        Stock = Stocks[stock]
-        rate = Stock['rate']
-        slope = Stock['slope']
-        lower = Stock['lower']
-        i = Stock['index']
-        Z = logistic(Xb[i])
-        limit = slope*Z + lower
-        D_y[i] = rate*(limit-y[i])
-
-    return D_y
-
-def Euler(f, y_0, t, parameters):
-    n_iter = 10
-    h = (t[1] - t[0])/n_iter
-    n = len(t)
-    m = len(y_0)
-    y = np.zeros([n,m])
-    y[0,:] = y_0
-    for i in range(n-1):
-        y_intermediate = y[i,:]
-        for j in range(n_iter):
-            y_intermediate = y_intermediate + np.multiply(h,f(y_intermediate,t[i],parameters))
-        y[i+1,:] = y_intermediate
-    return y
 
 # Bundle parameters for ODE solver
 parameters = {
@@ -591,7 +537,7 @@ def update_graph(S_values,F_values,P_values):
     # S_values_global = np.array(S_values) # used for sensitivities
     # F_values_global = np.array(F_values)
     t_all, y_t, num_d, pos_neg_HO = calc_y(S_values,F_values,P_values)
-    # num_deliver_home, num_deliver_2, num_deliver_4, num_deliver_total = num_d[0], num_d[1], num_d[2], num_d[3]
+    # num_deliver_home, num_deliver_2, num_deliver_4, num_deliver_total, L2_D_Capacity, L4_D_Capacity = num_d
     k_range_1A  = range(0,6)
     k_range_1B  = range(6,11)
     k_range_1C  = range(11,16)
@@ -649,13 +595,13 @@ def update_graph(S_values,F_values,P_values):
         }
     }
 
-    num_deliveries_labels = ['Level 4/5','Level 2/3','Home','Total'] # total is unused
+    num_deliveries_labels = ['Level 4/5','Level 2/3','Home','Total','Capacity 4/5','Capacity 2/3'] # total is unused
     fig_2B = {
         'data':[{
             'x': t_all,
             'y': num_d[k],
             'name': num_deliveries_labels[k]
-        } for k in range(3)], # don't need total, so just the first three
+        } for k in [0,1,2,4,5]], # don't need total, so just the first three
         'layout': {
             'title':  'Deliveries over time',
             'xaxis':{'title':'Time (months)'},
