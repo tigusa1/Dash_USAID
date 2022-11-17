@@ -8,7 +8,6 @@ import numpy as np
 import plotly.graph_objects as go
 import random
 
-# make a change
 from Mother import Mother
 
 random.seed(10)
@@ -147,6 +146,7 @@ for i in range(len(S_info)):
 # Names, initial values
 F_info = [
     ['Funding_MNCH',          0.2, 'Funding_MNCH'         ],
+    ['Support_Linda_Mama',    0.2, 'Support_Linda_Mama'   ],
     ['Prioritization_MNCH',   0.2, 'Prioritization_MNCH'  ],
     ['Delayed_disbursement',  0.2, 'Delayed_disbursement' ],
     ['Adherence_budget',      0.2, 'Adherence_budget'     ],
@@ -154,7 +154,20 @@ F_info = [
     ['Lack_promotion',        0.2, 'Lack_promotion'       ],
     ['Lack_action_depletion', 0.2, 'Lack_action_depletion'],
     ['Visibility',            0.2, 'Visibility'           ],
-    ['Inadequate_financing', 		  0.2, 'Inadequate_financing'   	  ],
+    ['Inadequate_financing',  0.2, 'Inadequate_financing' ],
+    ['Timely_promotions',     0.2, 'Timely_promotions'    ], 
+    ['Action_depletion',      0.2, 'Action_depletion'     ], 
+    ['Lack_adherence_budget', 0.2, 'Lack_adherence_budget'], 
+    ['Delay_hiring',          0.2, 'Delay_hiring'         ], 
+    ['Frequent_transfer',     0.2, 'Frequent_transfer'    ], 
+    ['Burn_out',              0.2, 'Burn_out'             ], 
+    ['Poor_management',       0.2, 'Poor_management'      ], 
+    ['Increase_awareness',    0.2, 'Increase_awareness'   ], 
+    ['Strong_referrals',      0.2, 'Strong_referrals'     ], 
+    ['Training_incentives',   0.2, 'Training_incentives'  ], 
+    ['Pos_supply_chain',      0.2, 'Pos_supply_chain'     ], 
+    ['Neg_supply_chain',      0.2, 'Neg_supply_chain'     ], 
+    ['Increase_awareness_address_myths', 0.2, 'Increase_awareness_address_myths']
 ]
 #   ['BL_Capacity_2',         0.2, 'BL_Capacity_L2/3 (100s)'],
 #   ['BL_Capacity_4',         0.2, 'BL_Capacity_L4/5 (100s  )'],
@@ -237,40 +250,40 @@ def calc_y(S_values, F_values, P_values):
                 neg_HO_t[2] / neg_HO_t[0] ])
 
         P_P_target    = 0.8
-        P_A_target    = (P_M[t] * logistic([Visibility,1]) + P_I[t]) / 2
+        P_A_target    = (P_M[t] * logistic([Visibility, Action_depletion, 1]) + P_I[t]) / 2
         P_D_target    = 0.7
         P_DP_target   = 0.7
         P_M_target    = 0.7
         P_I_target    = 0.6
-        P_SP_target   = (P_P[t] + P_A[t] + P_D[t] * logistic([Visibility,1])) / 3
+        P_SP_target   = (P_P[t] + P_A[t] + P_D[t] * logistic([Visibility, Action_depletion, 1])) / 3
         dP_SP_in      = (P_P[t] + P_A[t] + P_D[t])
         dP_A_in       = (P_M[t] + P_I[t])
 
-        P_RR_target   = 1.0 * logistic([Funding_MNCH, Prioritization_MNCH, -Delayed_disbursement,3])
+        P_RR_target   = 1.0 * logistic([Funding_MNCH, Support_Linda_Mama, Prioritization_MNCH, -Delayed_disbursement, -Lack_adherence_budget, 3])
         dP_RR_in      = P_DP[t] + P_SP[t]
 
-        L2_HF_target  = 0.9 * P_RR[t] * logistic([Adherence_budget,-Inadequate_financing,2])
-        L4_HF_target  = 0.8 * P_RR[t] * logistic([Adherence_budget,-Inadequate_financing,2])
-        S_TF_target   = 0.8 * P_RR[t] * logistic([Adherence_budget,-Inadequate_financing,2])
+        L2_HF_target  = 0.9 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
+        L4_HF_target  = 0.8 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
+        S_TF_target   = 0.8 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
         dL2_HF_in     = P_RR[t]  # coefficients of these three dStock_in terms add up to 1
         dL4_HF_in     = P_RR[t]
         dS_TF_in      = P_RR[t]
         # dP_RR_out = dL2_HF_in + dL4_HF_in + dS_TF_in
 
         L2_target_0   = 0.9 * L2_HF[t] # combined targets of L2_HR and L2_S =0.9*target of L2_HF
-        L2_HR_target  = L2_target_0 * logistic([Employee_incentives, -Lack_promotion,3])
-        L2_S_target   = L2_target_0 * logistic([Lack_action_depletion, -L2_demand,2])
+        L2_HR_target  = L2_target_0 * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
+        L2_S_target   = L2_target_0 * logistic([-Lack_action_depletion, Pos_supply_chain, Neg_supply_chain, -L2_demand,2])
         dL2_HR_in     = L2_HF[t]
         dL2_S_in      = L2_HF[t]
         # dL2_HF_out = dL2_HR_in + dL2_S_in
         L4_target_0   = 0.9 * L4_HF[t]
-        L4_HR_target  = L4_target_0 * logistic([Employee_incentives, -Lack_promotion,3])
-        L4_S_target   = L4_target_0 * logistic([Lack_action_depletion, -L4_demand,2])
+        L4_HR_target  = L4_target_0 * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
+        L4_S_target   = L4_target_0 * logistic([-Lack_action_depletion, Pos_supply_chain, Neg_supply_chain, -L4_demand,2])
         dL4_HR_in     = L4_HF[t]
         dL4_S_in      = L4_HF[t]
         # dL4_HF_out = dL4_HR_in + dL4_S_in
-        S_FR_target  = 0.7 * S_TF[t] * logistic([Employee_incentives, -Lack_promotion,2])
-        S_T_target   = 0.9 * S_TF[t] * logistic([Employee_incentives, -Lack_promotion,2])
+        S_FR_target  = 0.7 * S_TF[t] * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
+        S_T_target   = 0.9 * S_TF[t] * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
         dS_FR_in     = S_TF[t]
         dS_T_in      = S_TF[t]
         # dS_TF_out  = dS_FR_in + dS_T_in
@@ -280,8 +293,8 @@ def calc_y(S_values, F_values, P_values):
         dL2_DC_in     =  0.2 * S_FR[t] # target < stock so need to reverse sign here
         dL4_DC_in     =  0.2 * S_FR[t]
 
-        L2_Q_target  = (L2_HR_target + L2_S_target) / 2 / L2_target_0 * logistic([-9*L2_demand,5])
-        L4_Q_target  = (L4_HR_target + L4_S_target) / 2 / L4_target_0 * logistic([-9*L4_demand,5])
+        L2_Q_target  = (L2_HR_target + L2_S_target) / 2 / L2_target_0 * logistic([Strong_referrals, Increase_awareness, -9*L2_demand,5])
+        L4_Q_target  = (L4_HR_target + L4_S_target) / 2 / L4_target_0 * logistic([Strong_referrals, Increase_awareness_address_myths, -9*L4_demand,5])
         dL2_Q_in     = (L2_HR[t] + L2_S[t])
         dL4_Q_in     = (L4_HR[t] + L4_S[t])
 
