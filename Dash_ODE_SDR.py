@@ -20,7 +20,7 @@ education   = df['Education'].to_numpy()
 age         = df['Age'].to_numpy()
 no_children = df['No_children'].to_numpy()
 
-n_repeat = 1
+n_repeat = 1 # n_repeat greater than 1 makes the code run slow, it is better to repeat in the Excel file
 for i in range(n_repeat):
     wealth = wealth.repeat(n_repeat)
     education = education.repeat(n_repeat)
@@ -306,9 +306,9 @@ def calc_y(S_values, F_values, P_values):
         for mother in mothers:
             fac = np.array(facility)
             fac1 = sum(fac == 1)
-            den = (L2_DC[t]*BL_Capacity_factor)
+            den = L2_DC[t]*BL_Capacity_factor
             mother.increase_age(l4_quality, l2_quality, proximity, L2_4_health_outcomes,
-                1 - (sum(fac == 1) - fac_t1) / (L2_DC[t]*BL_Capacity_factor),
+                1 - (fac1 - fac_t1) / den,
                 None) # don't need the last argument
                 # 1 - (sum(fac == 2) - fac_t2) / (L4_DC[t] * BL_Capacity_factor))
             # mother.increase_age(quality, proximity)
