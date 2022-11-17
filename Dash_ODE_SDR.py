@@ -154,9 +154,10 @@ F_info = [
     ['Lack_promotion',        0.2, 'Lack_promotion'       ],
     ['Lack_action_depletion', 0.2, 'Lack_action_depletion'],
     ['Visibility',            0.2, 'Visibility'           ],
+    ['Inadequate_financing', 		  0.2, 'Inadequate_financing'   	  ],
 ]
 #   ['BL_Capacity_2',         0.2, 'BL_Capacity_L2/3 (100s)'],
-#   ['BL_Capacity_4',         0.2, 'BL_Capacity_L4/5 (100s)'],
+#   ['BL_Capacity_4',         0.2, 'BL_Capacity_L4/5 (100s  )'],
 
 F_names, F_0, F_label, F_idx_names = [],[],[],[]
 for i in range(len(F_info)):
@@ -248,15 +249,15 @@ def calc_y(S_values, F_values, P_values):
         P_RR_target   = 1.0 * logistic([Funding_MNCH, Prioritization_MNCH, -Delayed_disbursement,3])
         dP_RR_in      = P_DP[t] + P_SP[t]
 
-        L2_HF_target  = 0.9 * P_RR[t] * logistic([Adherence_budget,2])
-        L4_HF_target  = 0.8 * P_RR[t] * logistic([Adherence_budget,2])
-        S_TF_target   = 0.8 * P_RR[t] * logistic([Adherence_budget,2])
+        L2_HF_target  = 0.9 * P_RR[t] * logistic([Adherence_budget,-Inadequate_financing,2])
+        L4_HF_target  = 0.8 * P_RR[t] * logistic([Adherence_budget,-Inadequate_financing,2])
+        S_TF_target   = 0.8 * P_RR[t] * logistic([Adherence_budget,-Inadequate_financing,2])
         dL2_HF_in     = P_RR[t]  # coefficients of these three dStock_in terms add up to 1
         dL4_HF_in     = P_RR[t]
         dS_TF_in      = P_RR[t]
         # dP_RR_out = dL2_HF_in + dL4_HF_in + dS_TF_in
 
-        L2_target_0   = 0.9 * L2_HF[t]
+        L2_target_0   = 0.9 * L2_HF[t] # combined targets of L2_HR and L2_S =0.9*target of L2_HF
         L2_HR_target  = L2_target_0 * logistic([Employee_incentives, -Lack_promotion,3])
         L2_S_target   = L2_target_0 * logistic([Lack_action_depletion, -L2_demand,2])
         dL2_HR_in     = L2_HF[t]
@@ -276,8 +277,8 @@ def calc_y(S_values, F_values, P_values):
 
         L2_DC_target  = 0.1
         L4_DC_target  = 0.9
-        dL2_DC_in     =  0.1 * S_FR[t] # target < stock so need to reverse sign here
-        dL4_DC_in     =  0.1 * S_FR[t]
+        dL2_DC_in     =  0.2 * S_FR[t] # target < stock so need to reverse sign here
+        dL4_DC_in     =  0.2 * S_FR[t]
 
         L2_Q_target  = (L2_HR_target + L2_S_target) / 2 / L2_target_0 * logistic([-9*L2_demand,5])
         L4_Q_target  = (L4_HR_target + L4_S_target) / 2 / L4_target_0 * logistic([-9*L4_demand,5])
