@@ -148,26 +148,28 @@ F_info = [
     ['Funding_MNCH',          0.2, 'Funding_MNCH'         ],
     ['Support_Linda_Mama',    0.2, 'Support_Linda_Mama'   ],
     ['Prioritization_MNCH',   0.2, 'Prioritization_MNCH'  ],
-    ['Delayed_disbursement',  0.2, 'Delayed_disbursement' ],
     ['Adherence_budget',      0.2, 'Adherence_budget'     ],
     ['Employee_incentives',   0.2, 'Employee_incentives'  ],
-    ['Lack_promotion',        0.2, 'Lack_promotion'       ],
-    ['Lack_action_depletion', 0.2, 'Lack_action_depletion'],
     ['Visibility',            0.2, 'Visibility'           ],
-    ['Inadequate_financing',  0.2, 'Inadequate_financing' ],
     ['Timely_promotions',     0.2, 'Timely_promotions'    ], 
     ['Action_depletion',      0.2, 'Action_depletion'     ], 
-    ['Lack_adherence_budget', 0.2, 'Lack_adherence_budget'], 
-    ['Delay_hiring',          0.2, 'Delay_hiring'         ], 
-    ['Frequent_transfer',     0.2, 'Frequent_transfer'    ], 
-    ['Burn_out',              0.2, 'Burn_out'             ], 
-    ['Poor_management',       0.2, 'Poor_management'      ], 
     ['Increase_awareness',    0.2, 'Increase_awareness'   ], 
     ['Strong_referrals',      0.2, 'Strong_referrals'     ], 
     ['Training_incentives',   0.2, 'Training_incentives'  ], 
     ['Pos_supply_chain',      0.2, 'Pos_supply_chain'     ], 
-    ['Neg_supply_chain',      0.2, 'Neg_supply_chain'     ], 
     ['Increase_awareness_address_myths', 0.2, 'Increase_awareness_address_myths'],
+
+    ['Delayed_disbursement',  0.2, 'Delayed_disbursement' ],
+    ['Lack_promotion',        0.2, 'Lack_promotion'       ],
+    ['Lack_action_depletion', 0.2, 'Lack_action_depletion'],
+    ['Inadequate_financing',  0.2, 'Inadequate_financing' ],
+    ['Lack_adherence_budget', 0.2, 'Lack_adherence_budget'], 
+    ['Delay_hiring',          0.2, 'Delay_hiring'         ], 
+    ['Frequent_transfer',     0.2, 'Frequent_transfer'    ], 
+    ['Burn_out',              0.2, 'Burn_out'             ], 
+    ['Poor_management',       0.2, 'Poor_management'      ],
+    ['Neg_supply_chain',      0.2, 'Neg_supply_chain'     ], 
+
     ['L2_DC_target',          0.1, 'L2_Delivery_Capacity_Target'],
     ['L4_DC_target',          0.9, 'L4_Delivery_Capacity_Target'],
 ]
@@ -190,7 +192,12 @@ B_info = [
     ['BL_Capacity_factor',        10, 'BL_Capacity_Factor'                ],
     ['Health_outcomes__Predisp', 2.4, 'Health outcome -> Predisp hospital'],
     ['L4_Q__Predisp',            0.2, 'L4/5 quality -> Predisp hospital'  ],
-    ['Health_Predisp',           0.2, 'Health_Predisp -> Predisp hospital']
+    ['Health_Predisp',           0.2, 'Health_Predisp -> Predisp hospital'],
+    ['Health_const_0',           0.8, 'Health_const_0'],
+    ['Health_slope_0',           0.2, 'Health_slope_0'],
+    ['Predisp_ANC_const_0',      0.4, 'Predisp_ANC_const_0'],
+    ['Predisp_ANC_slope_0',      0.2, 'Predisp_ANC_slope_0'],
+
 ]
 
 B_names, B_0, B_label, B_idx_names = [],[],[],[]
@@ -445,7 +452,7 @@ def many_sliders(slider_labels,slider_type,default_values,min_values,max_values,
     ],style={'width':'100%'})
         
 F_sliders = many_sliders(F_label,'F_slider',F_0,np.zeros(len(F_0)),np.ones(len(F_0)),num_rows=5)
-B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(F_0)),np.array(B_0)*4,num_rows=3,num_cols=4,width=3)
+B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(F_0)),np.array(B_0)*4, num_rows=3, num_cols=4, width=3)
 
 app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     dbc.Row([
@@ -588,7 +595,7 @@ def update_graph(S_values,F_values,B_values,P_values):
             'name': S_label[k]
         } for k in k_range_1B],
         'layout': {
-            'title':  'FINANCE',
+            'title':  'RESOURCES',
             'xaxis':{'title':'Time (months)'},
             'yaxis':{'range':[0,0.8], 'title':'Stocks (normalized units)'}
         }
@@ -601,7 +608,7 @@ def update_graph(S_values,F_values,B_values,P_values):
             'name': S_label[k]
         } for k in k_range_1C],
         'layout': {
-            'title':  'FACILITIES',
+            'title':  'SERVICE READINESS',
             'xaxis':{'title':'Time (months)'},
             'yaxis':{'range':[0,0.5], 'title':'Stocks (normalized units)'}
         }

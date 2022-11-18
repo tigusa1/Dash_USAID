@@ -4,6 +4,11 @@ import numpy as np
 class Mother:
     def __init__(self, wealth, education, age, no_children, max_gest_age, B):
         """initiate characteristics of Mother agent"""
+        Health_const_0 = B['Health_const_0']
+        Health_slope_0 = B['Health_slope_0']
+        Predisp_ANC_const_0 = B['Predisp_ANC_const_0']
+        Predisp_ANC_slope_0 = B['Predisp_ANC_slope_0']
+        
         self._wealth = wealth
         self._education = education
         self._age = age
@@ -11,9 +16,10 @@ class Mother:
         self.B = B
 
         self._gest_age = -(np.int(np.random.randint(-8, max_gest_age, 1)))
-        self.logit_health = 0.8 + 0.2 * (np.random.uniform(-1, 1, 1))
+        self.logit_health = Health_const_0 + Health_slope_0 * (np.random.uniform(-1, 1, 1))
         self._health = logistic(self.logit_health)
-        self._predisp_ANC = 0.4 + 0.2 * (np.random.uniform(-1, 1, 1))
+        self._predisp_ANC = Predisp_ANC_const_0 + Predisp_ANC_slope_0 * (np.random.uniform(-1, 1, 1))
+
 
         self._delivery = None
         self._facility = None
