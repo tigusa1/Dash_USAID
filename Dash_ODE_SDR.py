@@ -187,9 +187,9 @@ for i in range(len(F_info)):
 # BL_Capacity_factor = 10
 
 B_info = [
-    ['BL_Capacity_factor', 10, 'BL_Capacity_Factor'],
+    ['BL_Capacity_factor',        10, 'BL_Capacity_Factor'                ],
     ['Health_outcomes__Predisp', 2.4, 'Health outcome -> Predisp hospital'],
-    ['L4_Q__Predisp', 0.2, 'L4/5 quality -> Predisp hospital'],
+    ['L4_Q__Predisp',            0.2, 'L4/5 quality -> Predisp hospital'  ],
 ]
 
 B_names, B_0, B_label, B_idx_names = [],[],[],[]

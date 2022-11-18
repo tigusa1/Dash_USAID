@@ -30,7 +30,7 @@ class Mother:
     def choose_delivery(self, l4_quality, l2_quality, proximity, health_outcomes, L2_net_capacity, L4_net_capacity):
         """delivery facility depending on where one goes for care and health status"""
         Health_outcomes__Predisp = self.B['Health_outcomes__Predisp']
-        L4_Q__Predisp = self.B['L4_Q__Predisp']
+        L4_Q__Predisp            = self.B['L4_Q__Predisp']
         logit_predisp_l4 = 0.02*self._wealth + 0.02*self._education + 0.001*self._age \
                          + 0.05*self._no_children + 0.2*self._health \
                          + L4_Q__Predisp*l4_quality + 0.1*proximity \
