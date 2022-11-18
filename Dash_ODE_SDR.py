@@ -680,7 +680,7 @@ def update_graph(S_values,F_values,B_values,C_values,P_values): # each argument 
         'layout': {
             'title':  'Deliveries over time',
             'xaxis':{'title':'Time (months)'},
-            'yaxis':{'range':[0,40], 'title':'Deliveries'}
+            'yaxis':{'range':[0,20], 'title':'Deliveries'}
         }
     }
 
