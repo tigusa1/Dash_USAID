@@ -173,8 +173,6 @@ F_info = [
     ['L2_DC_target',          0.1, 'L2_Delivery_Capacity_Target'],
     ['L4_DC_target',          0.9, 'L4_Delivery_Capacity_Target'],
 ]
-#   ['BL_Capacity_2',         0.2, 'BL_Capacity_L2/3 (100s)'],
-#   ['BL_Capacity_4',         0.2, 'BL_Capacity_L4/5 (100s)'],
 
 F_names, F_0, F_label, F_idx_names = [],[],[],[]
 for i in range(len(F_info)):
@@ -184,7 +182,6 @@ for i in range(len(F_info)):
     F_0.append(    F_info[i][1])
     F_label.append(F_info[i][2])
     globals()[name] = F_0[i]
-    # globals()[name] = np.zeros(nt)
 
 # BL_Capacity_factor = 10
 
@@ -197,7 +194,6 @@ B_info = [
     ['Health_slope_0',           0.2, 'Health_slope_0'],
     ['Predisp_ANC_const_0',      0.4, 'Predisp_ANC_const_0'],
     ['Predisp_ANC_slope_0',      0.2, 'Predisp_ANC_slope_0'],
-
 ]
 
 B_names, B_0, B_label, B_idx_names = [],[],[],[]
@@ -208,22 +204,40 @@ for i in range(len(B_info)):
     B_0.append(    B_info[i][1])
     B_label.append(B_info[i][2])
     globals()[name] = B_0[i]
-    # globals()[name] = np.zeros(nt)
+
+# MODEL PARAMETER INFORMATION FOR SLIDERS
+C_info = [
+    ['P_P_target', 0.8, 'Political_Goodwill_target'],
+    ['P_D_target', 0.7, 'Data_Performance_target'],
+    ['P_D_target', 0.7, 'Data_Performance_target'],
+    ['L2_HF_target_0', 0.8, 'L2/3_HC_Financing_target'],
+]
+
+# SET UP OTHER INTERMEDIATE PYTHON VARIABLES FOR THE MODEL AND SLIDERS
+C_names, C_0, C_label, C_idx_names = [],[],[],[]
+for i in range(len(C_info)):
+    name = C_info[i][0]            # name of the variable is set, e.g. name = 'P_P_target'
+    C_names.append(name)           # C_names = ['P_P_target',...]
+    C_idx_names.append([i, name])  # C_idx_names = [[0,'P_P_target'],[1,P_D_target],...]
+    C_0.append(    C_info[i][1])   # C_0 = [0.8, 0.7, ...] hard-coded initial value used in sliders
+    C_label.append(C_info[i][2])   # C_label = ['Political_Goodwill_target',...] for sliders
+    globals()[name] = C_0[i]       # P_P_target = C_0[0] = 0.8 for model and sliders
 
 F_change   = np.zeros(len(F_0)) # changed values based on sliders
 F_original = np.zeros(len(F_0)) # original values
 for i in range(len(F_0)):
-    F_change[i]   = F_0[i] # don't copy the object, just the value
-    F_original[i] = F_0[i]
+    F_original[i] = F_0[i] # get the hard-coded value, originally from F_info
+    F_change[i]   = F_0[i] # initialize (don't copy the object, just the value)
 
 y_0 = S_0
 
-def calc_y(S_values, F_values, B_values, P_values):
+def calc_y(S_values, F_values, B_values, C_values, P_values): # values from the sliders
     # P_values = parameter values
-    for i in range(len(F_values)):
-        F_change[i] = F_values[i]
-    parameters['t_change'] = P_values[0]
-    parameters['beta']     = P_values[1]
+    for i in range(len(F_values)): # for each F-slider
+        F_change[i] = F_values[i] # F-parameter that is collected from the slider
+
+    parameters['t_change'] = P_values[0] # slider value for time when the parameters change
+    parameters['beta']     = P_values[1] # slider value for beta
 
     beta  = parameters['beta'] / 10
     y_t   = np.zeros((nt,len(S_values)))
@@ -240,23 +254,27 @@ def calc_y(S_values, F_values, B_values, P_values):
     for idx,name in S_idx_names:
         globals()[name][0] = S_values[idx]
 
-    B = {}
+    B = {} # Use a dictionary so that we only need to pass B to the Mother class
     for idx,name in B_idx_names:
-        B[name] = B_values[idx]
-        globals()[name] = B_values[idx]
+        B[name] = B_values[idx]         # B['Health_outcomes__Predisp'] = 2.4
+        globals()[name] = B_values[idx] # Health_outcomes__Predisp = 2.4
+
+    for idx,name in C_idx_names:
+        globals()[name] = C_values[idx] # P_P_target = 0.8
 
     mothers = []
 
     for mother in range(0, no_mothers):
         mothers.append(Mother(wealth[mother], education[mother], age[mother], no_children[mother], nt, B))
 
+    # LOOP OVER EVERY TIME VALUE
     for t in range(0,nt-1):
-        if t > parameters['t_change']:
+        if t > parameters['t_change']: # IF TIME IS LARGER THAN THE t_change SLIDER VALUE
             for idx, name in F_idx_names:
-                globals()[name] = F_change[idx]
-        else:
+                globals()[name] = F_change[idx] # then use the SLIDER value for the F-parameter, e.g., Visibility = 0.0
+        else:                                   # otherwise
             for idx, name in F_idx_names:
-                globals()[name] = F_original[idx]
+                globals()[name] = F_original[idx] # use the HARD-CODED value for the F-parameter saved in F_info
 
         t_all[t+1] = t_all[t] + 1 # increment by month
         gest_age, health, anc, delivery, facility = [], [], [], [], []
@@ -282,9 +300,9 @@ def calc_y(S_values, F_values, B_values, P_values):
                 neg_HO_t[1] / neg_HO_t[0],
                 neg_HO_t[2] / neg_HO_t[0] ])
 
-        P_P_target    = 0.8
+        # P_P_target    = 0.8
         P_A_target    = (P_M[t] * logistic([Visibility, Action_depletion, 1]) + P_I[t]) / 2
-        P_D_target    = 0.7
+        # P_D_target    = 0.7
         P_DP_target   = 0.7
         P_M_target    = 0.7
         P_I_target    = 0.6
@@ -295,7 +313,7 @@ def calc_y(S_values, F_values, B_values, P_values):
         P_RR_target   = 1.0 * logistic([Funding_MNCH, Support_Linda_Mama, Prioritization_MNCH, -Delayed_disbursement, -Lack_adherence_budget, 3])
         dP_RR_in      = P_DP[t] + P_SP[t]
 
-        L2_HF_target  = 0.9 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
+        L2_HF_target  = L2_HF_target_0 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
         L4_HF_target  = 0.8 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
         S_TF_target   = 0.8 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
         dL2_HF_in     = P_RR[t]  # coefficients of these three dStock_in terms add up to 1
@@ -451,9 +469,12 @@ def many_sliders(slider_labels,slider_type,default_values,min_values,max_values,
         ],width=width) for k in range(0,num_cols)
     ],style={'width':'100%'})
         
-PF_sliders = many_sliders(F_label[0:13],'F_slider',F_0[0:13],np.zeros(len(F_0[0:13])),np.ones(len(F_0[0:13])),num_rows=3)
-NF_sliders = many_sliders(F_label[14:25],'F_slider',F_0[14:25],np.zeros(len(F_0[14:25])),np.ones(len(F_0[14:25])),num_rows=2)
-B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(F_0)),np.array(B_0)*4, num_rows=2, num_cols=4, width=3)
+# PF_sliders = many_sliders(F_label[0:13],'F_slider',F_0[0:13],np.zeros(len(F_0[0:13])),np.ones(len(F_0[0:13])),num_rows=3)
+# NF_sliders = many_sliders(F_label[14:25],'F_slider',F_0[14:25],np.zeros(len(F_0[14:25])),np.ones(len(F_0[14:25])),num_rows=2)
+F_sliders = many_sliders(F_label,'F_slider',F_0,np.zeros(len(F_0)),np.array(F_0)*4, num_rows=4)
+B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=2, num_cols=4, width=3)
+# many_sliders(labels, type used in Input() as an identifier of group of sliders, initial values, min, max, ...
+C_sliders = many_sliders(C_label,'C_slider',C_0,np.zeros(len(C_0)),np.ones(len(C_0)), num_rows=2, num_cols=4, width=3)
 
 app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     dbc.Row([
@@ -524,21 +545,33 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     #     ], width=3),
     # ],  className="pretty_container"),
 
-    dbc.Row([
-        dbc.Col(html.H5('Positive Factors'),width=12),
-        PF_sliders,
-        ],className="pretty_container"
-    ),
+    # dbc.Row([
+    #     dbc.Col(html.H5('Positive Factors'),width=12),
+    #     PF_sliders,
+    #     ],className="pretty_container"
+    # ),
+    #
+    # dbc.Row([
+    #     dbc.Col(html.H5('Negative Factors'),width=12),
+    #     NF_sliders,
+    #     ],className="pretty_container"
+    # ),
 
     dbc.Row([
-        dbc.Col(html.H5('Negative Factors'),width=12),
-        NF_sliders,
+        dbc.Col(html.H5('Factors'),width=12),
+        F_sliders,
         ],className="pretty_container"
     ),
 
     dbc.Row([
         dbc.Col(html.H5('Beta coefficients'),width=12),
         B_sliders,
+        ],className="pretty_container"
+    ),
+
+    dbc.Row([
+        dbc.Col(html.H5('Constant coefficients for the model'),width=12),
+        C_sliders,
         ],className="pretty_container"
     ),
 
@@ -567,15 +600,18 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     dash.dependencies.Output('plot_2a', 'figure'),
     dash.dependencies.Output('plot_2b', 'figure'),
     dash.dependencies.Output('plot_2c', 'figure'),
-    [Input({'type':'S_slider','index':ALL}, 'value'),
+    # each row is passed to update_graph (update the dashboard) as a separate argument in the same
+    [Input({'type':'S_slider','index':ALL}, 'value'), # get all S-slider values, pass as 1st argument to update_graph()
      Input({'type':'F_slider','index':ALL}, 'value'),
      Input({'type':'B_slider','index':ALL}, 'value'),
+     Input({'type':'C_slider','index':ALL}, 'value'),
      Input({'type':'P_slider','index':ALL}, 'value'),]
 )
-def update_graph(S_values,F_values,B_values,P_values):
+def update_graph(S_values,F_values,B_values,C_values,P_values): # each argument is one of Input(...)
     # S_values_global = np.array(S_values) # used for sensitivities
     # F_values_global = np.array(F_values)
-    t_all, y_t, num_d, pos_neg_HO = calc_y(S_values,F_values,B_values,P_values)
+    # SLIDER VALUES GETS PASSED TO THE MODEL TO COMPUTE THE MODEL RESULTS (e.g., y_t = stocks over time)
+    t_all, y_t, num_d, pos_neg_HO = calc_y(S_values,F_values,B_values,C_values,P_values)
     # num_deliver_home, num_deliver_2, num_deliver_4, num_deliver_total, L2_D_Capacity, L4_D_Capacity = num_d
     k_range_1A  = range(0,6)
     k_range_1B  = range(6,11)
