@@ -126,7 +126,7 @@ S_info = [
     ['S_FR',  0.2, 'SDR_Facility_Repurposing'   ],
 
     ['L4_DC', 0.4, 'Delivery_Capacity_4/5'      ],
-    ['L2_DC', 0.4, 'Delivery_Capacity_2/3'      ],
+    ['L2_DC', 0.9, 'Delivery_Capacity_2/3'      ],
     ['P_D',   0.2, 'Performance_Data'           ],
     ['L4_Q',  0.5, 'Quality_4/5'                ],
     ['L2_Q',  0.2, 'Quality_2/3'                ],
@@ -187,13 +187,25 @@ for i in range(len(F_info)):
 
 B_info = [
     ['BL_Capacity_factor',        10, 'BL_Capacity_Factor'                ],
+    ['Initial_Negative_Predisp', 2, 'Initial_Negative_Predisp'],
     ['Health_outcomes__Predisp', 2.4, 'Health outcome -> Predisp hospital'],
     ['L4_Q__Predisp',            0.2, 'L4/5 quality -> Predisp hospital'  ],
     ['Health_Predisp',           0.2, 'Health_Predisp -> Predisp hospital'],
-    ['Health_const_0',           0.8, 'Health_const_0'],
-    ['Health_slope_0',           0.2, 'Health_slope_0'],
     ['Predisp_ANC_const_0',      0.4, 'Predisp_ANC_const_0'],
     ['Predisp_ANC_slope_0',      0.2, 'Predisp_ANC_slope_0'],
+    ['Predisp_L2_L4',             4., 'Predisp_L2_L4'],  # 1
+    ['Wealth__Predisp',          0.2, 'Wealth__Predisp'],  # 0.2
+    ['Education__Predisp',      0.02, 'Education__Predisp'],  # 0.02
+    ['Age__Predisp',           0.001, 'Age__Predisp'],  # 0.001
+    ['No_Children__Predisp',    0.05, 'No_Children__Predisp'],  # 0.05
+    ['Proximity__Predisp',       0.1, 'Proximity__Predisp'],  # 0.1
+    ['Health_const_0',           0.8, 'Health_const_0'],
+    ['Health_slope_0',           0.2, 'Health_slope_0'],
+    ['Q_Health_multiplier',              6., 'Q_Health_multiplier'],  # 6
+    ['Q_Health_L4_constant',            1.5, 'Q_Health_L4_constant'],  # 1.5
+    ['Q_Health_L4_L2_difference',        1., 'Q_Health_L4_L2_difference'],  # 1
+    ['Q_Health_L4_referral_difference', 0.5, 'Q_Health_L4_referral_difference'],  # 0.5
+    ['Q_Health_Home_negative',          0.5, 'Q_Health_Home_negative'],  # 0.5
 ]
 
 B_names, B_0, B_label, B_idx_names = [],[],[],[]
@@ -211,6 +223,18 @@ C_info = [
     ['P_D_target', 0.7, 'Data_Performance_target'],
     ['P_D_target', 0.7, 'Data_Performance_target'],
     ['L2_HF_target_0', 0.8, 'L2/3_HC_Financing_target'],
+    ['L2_target_0', 0.9, 'L2_target_0'],
+    ['L4_target_0', 0.9, 'L4_target_0'],
+    ['S_FR_target_0', 0.7, 'S_FR_target_0'],
+    ['S_T_target_0', 0.9, 'S_T_target_0'],
+    ['dL2_DC_in_0', 0.2, 'dL2_DC_in_0'],
+    ['dL4_DC_in_0', 0.2, 'dL4_DC_in_0'],
+    ['P_DP_target', 0.7, 'P_DP_target'],
+    ['P_M_target', 0.7, 'P_M_target'],
+    ['P_I_target', 0.6, 'P_I_target'],
+    ['P_RR_target_0', 1.0, 'P_RR_target_0'],
+    ['L4_HF_target_0', 0.8, 'L4_HF_target_0'],
+    ['S_TF_target_0', 0.8, 'S_TF_target_0'],
 ]
 
 # SET UP OTHER INTERMEDIATE PYTHON VARIABLES FOR THE MODEL AND SLIDERS
@@ -288,7 +312,7 @@ def calc_y(S_values, F_values, B_values, C_values, P_values): # values from the 
         #     L4_demand = 0
         # else:
         L2_D_Capacity[t] = L2_DC[t] * BL_Capacity_factor
-        L4_D_Capacity[t] = L4_DC[t] * BL_Capacity_factor
+        L4_D_Capacity[t] = 2*L4_DC[t] * BL_Capacity_factor
         L2_demand = logistic(num_deliver_2[t] / (L2_D_Capacity[t]))
         L4_demand = logistic(num_deliver_4[t] / (L4_D_Capacity[t]))
 
@@ -300,52 +324,48 @@ def calc_y(S_values, F_values, B_values, C_values, P_values): # values from the 
                 neg_HO_t[1] / neg_HO_t[0],
                 neg_HO_t[2] / neg_HO_t[0] ])
 
-        # P_P_target    = 0.8
         P_A_target    = (P_M[t] * logistic([Visibility, Action_depletion, 1]) + P_I[t]) / 2
-        # P_D_target    = 0.7
-        P_DP_target   = 0.7
-        P_M_target    = 0.7
-        P_I_target    = 0.6
         P_SP_target   = (P_P[t] + P_A[t] + P_D[t] * logistic([Visibility, Action_depletion, 1])) / 3
         dP_SP_in      = (P_P[t] + P_A[t] + P_D[t])
         dP_A_in       = (P_M[t] + P_I[t])
 
-        P_RR_target   = 1.0 * logistic([Funding_MNCH, Support_Linda_Mama, Prioritization_MNCH, -Delayed_disbursement, -Lack_adherence_budget, 3])
+        P_RR_target   = P_RR_target_0 * logistic([Funding_MNCH, Support_Linda_Mama, Prioritization_MNCH, -Delayed_disbursement, -Lack_adherence_budget, 3])
         dP_RR_in      = P_DP[t] + P_SP[t]
 
         L2_HF_target  = L2_HF_target_0 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
-        L4_HF_target  = 0.8 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
-        S_TF_target   = 0.8 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
+        L4_HF_target  = L4_HF_target_0 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
+        S_TF_target   = S_TF_target_0 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
         dL2_HF_in     = P_RR[t]  # coefficients of these three dStock_in terms add up to 1
         dL4_HF_in     = P_RR[t]
         dS_TF_in      = P_RR[t]
         # dP_RR_out = dL2_HF_in + dL4_HF_in + dS_TF_in
-
-        L2_target_0   = 0.9 * L2_HF[t] # combined targets of L2_HR and L2_S =0.9*target of L2_HF
-        L2_HR_target  = L2_target_0 * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
-        L2_S_target   = L2_target_0 * logistic([-Lack_action_depletion, Pos_supply_chain, -Neg_supply_chain, -L2_demand,2])
+        # L2_target_combined_0 = L2_target_0 * L2_HF[t] # combined targets of L2_HR and L2_S =0.9*target of L2_HF
+        L2_target_combined_0 = L2_target_0 # combined targets of L2_HR and L2_S =0.9*target of L2_HF
+        L2_HR_target  = L2_target_combined_0 * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
+        L2_S_target   = L2_target_combined_0 * logistic([-Lack_action_depletion, Pos_supply_chain, -Neg_supply_chain, -L2_demand,2])
         dL2_HR_in     = L2_HF[t]
         dL2_S_in      = L2_HF[t]
         # dL2_HF_out = dL2_HR_in + dL2_S_in
-        L4_target_0   = 0.9 * L4_HF[t]
-        L4_HR_target  = L4_target_0 * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
-        L4_S_target   = L4_target_0 * logistic([-Lack_action_depletion, Pos_supply_chain, -Neg_supply_chain, -L4_demand,2])
+        # L4_target_combined_0 = L4_target_0 * L4_HF[t]
+        L4_target_combined_0 = L4_target_0
+        L4_HR_target  = L4_target_combined_0 * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
+        L4_S_target   = L4_target_combined_0 * logistic([-Lack_action_depletion, Pos_supply_chain, -Neg_supply_chain, -L4_demand,2])
         dL4_HR_in     = L4_HF[t]
         dL4_S_in      = L4_HF[t]
         # dL4_HF_out = dL4_HR_in + dL4_S_in
-        S_FR_target  = 0.7 * S_TF[t] * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
-        S_T_target   = 0.9 * S_TF[t] * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
+        S_FR_target  = S_FR_target_0 * S_TF[t] * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
+        S_T_target   = S_T_target_0 * S_TF[t] * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
         dS_FR_in     = S_TF[t]
         dS_T_in      = S_TF[t]
         # dS_TF_out  = dS_FR_in + dS_T_in
 
         # L2_DC_target  = 0.1
         # L4_DC_target  = 0.9
-        dL2_DC_in     =  0.2 * S_FR[t] # target < stock so need to reverse sign here
-        dL4_DC_in     =  0.2 * S_FR[t]
+        dL2_DC_in     =  dL2_DC_in_0 * S_FR[t] # target < stock so need to reverse sign here
+        dL4_DC_in     =  dL4_DC_in_0 * S_FR[t]
 
-        L2_Q_target  = (L2_HR_target + L2_S_target) / 2 / L2_target_0 * logistic([Strong_referrals, Increase_awareness, -9*L2_demand,5])
-        L4_Q_target  = (L4_HR_target + L4_S_target) / 2 / L4_target_0 * logistic([Strong_referrals, Increase_awareness_address_myths, -9*L4_demand,5])
+        L2_Q_target  = (L2_HR_target + L2_S_target) / 2 / L2_target_combined_0 * logistic([Strong_referrals, Increase_awareness, -9*L2_demand,5])
+        L4_Q_target  = (L4_HR_target + L4_S_target) / 2 / L4_target_combined_0 * logistic([Strong_referrals, Increase_awareness_address_myths, -9/2*L4_demand,5])
         dL2_Q_in     = (L2_HR[t] + L2_S[t])
         dL4_Q_in     = (L4_HR[t] + L4_S[t])
 
@@ -472,9 +492,9 @@ def many_sliders(slider_labels,slider_type,default_values,min_values,max_values,
 # PF_sliders = many_sliders(F_label[0:13],'F_slider',F_0[0:13],np.zeros(len(F_0[0:13])),np.ones(len(F_0[0:13])),num_rows=3)
 # NF_sliders = many_sliders(F_label[14:25],'F_slider',F_0[14:25],np.zeros(len(F_0[14:25])),np.ones(len(F_0[14:25])),num_rows=2)
 F_sliders = many_sliders(F_label,'F_slider',F_0,np.zeros(len(F_0)),np.array(F_0)*4, num_rows=4)
-B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=2, num_cols=4, width=3)
+B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=5, num_cols=4, width=3)
 # many_sliders(labels, type used in Input() as an identifier of group of sliders, initial values, min, max, ...
-C_sliders = many_sliders(C_label,'C_slider',C_0,np.zeros(len(C_0)),np.ones(len(C_0)), num_rows=2, num_cols=4, width=3)
+C_sliders = many_sliders(C_label,'C_slider',C_0,np.zeros(len(C_0)),np.ones(len(C_0)), num_rows=5, num_cols=4, width=3)
 
 app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     dbc.Row([
