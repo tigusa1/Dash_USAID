@@ -2,12 +2,13 @@ import numpy as np
 
 
 class Mother:
-    def __init__(self, wealth, education, age, no_children, max_gest_age):
+    def __init__(self, wealth, education, age, no_children, max_gest_age, B):
         """initiate characteristics of Mother agent"""
         self._wealth = wealth
         self._education = education
         self._age = age
         self._no_children = no_children
+        self.B = B
 
         self._gest_age = -(np.int(np.random.randint(-8, max_gest_age, 1)))
         self.logit_health = 0.8 + 0.2 * (np.random.uniform(-1, 1, 1))
@@ -28,10 +29,12 @@ class Mother:
 
     def choose_delivery(self, l4_quality, l2_quality, proximity, health_outcomes, L2_net_capacity, L4_net_capacity):
         """delivery facility depending on where one goes for care and health status"""
+        Health_outcomes__Predisp = self.B['Health_outcomes__Predisp']
+        L4_Q__Predisp = self.B['L4_Q__Predisp']
         logit_predisp_l4 = 0.02*self._wealth + 0.02*self._education + 0.001*self._age \
                          + 0.05*self._no_children + 0.2*self._health \
-                         + 0.2*l4_quality + 0.1*proximity \
-                         + 2.4*health_outcomes
+                         + L4_Q__Predisp*l4_quality + 0.1*proximity \
+                         + Health_outcomes__Predisp*health_outcomes
         logit_predisp_l2_l4 = logit_predisp_l4 + 1
         rand = np.random.uniform(0, 1, 1)
         if logistic([logit_predisp_l4 - 2]) > rand:
