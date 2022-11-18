@@ -451,8 +451,9 @@ def many_sliders(slider_labels,slider_type,default_values,min_values,max_values,
         ],width=width) for k in range(0,num_cols)
     ],style={'width':'100%'})
         
-F_sliders = many_sliders(F_label,'F_slider',F_0,np.zeros(len(F_0)),np.ones(len(F_0)),num_rows=5)
-B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(F_0)),np.array(B_0)*4, num_rows=3, num_cols=4, width=3)
+PF_sliders = many_sliders(F_label[0:13],'F_slider',F_0[0:13],np.zeros(len(F_0[0:13])),np.ones(len(F_0[0:13])),num_rows=3)
+NF_sliders = many_sliders(F_label[14:25],'F_slider',F_0[14:25],np.zeros(len(F_0[14:25])),np.ones(len(F_0[14:25])),num_rows=2)
+B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(F_0)),np.array(B_0)*4, num_rows=2, num_cols=4, width=3)
 
 app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     dbc.Row([
@@ -524,8 +525,14 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     # ],  className="pretty_container"),
 
     dbc.Row([
-        dbc.Col(html.H5('Factors'),width=12),
-        F_sliders,
+        dbc.Col(html.H5('Positive Factors'),width=12),
+        PF_sliders,
+        ],className="pretty_container"
+    ),
+
+    dbc.Row([
+        dbc.Col(html.H5('Negative Factors'),width=12),
+        NF_sliders,
         ],className="pretty_container"
     ),
 
