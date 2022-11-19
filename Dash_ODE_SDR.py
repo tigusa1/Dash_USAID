@@ -205,7 +205,7 @@ B_info = [
     ['Q_Health_L4_constant',            1.5, 'Q_Health_L4_constant'],  # 1.5
     ['Q_Health_L4_L2_difference',        1., 'Q_Health_L4_L2_difference'],  # 1
     ['Q_Health_L4_referral_difference', 0.5, 'Q_Health_L4_referral_difference'],  # 0.5
-    ['Q_Health_Home_negative',          1.0, 'Q_Health_Home_negative'],  # 0.5
+    ['Q_Health_Home_negative',         10.0, 'Q_Health_Home_negative'],  # 0.5
 ]
 
 B_names, B_0, B_label, B_idx_names = set_variables(B_info)
