@@ -96,6 +96,19 @@ proximity = 0.8
 
 # Make time array for solution
 nt = 48 # number of months
+def set_variables(X_info, name_append = '', nt=0):
+    X_names, X_0, X_label, X_idx_names = [], [], [], []
+    for i in range(len(X_info)):
+        name = X_info[i][0]            # name of the variable is set, e.g. name = 'P_P_target'
+        X_names.append(name)           # C_names = ['P_P_target',...]
+        X_idx_names.append([i, name])  # C_idx_names = [[0,'P_P_target'],[1,P_D_target],...]
+        X_0.append(X_info[i][1])       # C_0 = [0.8, 0.7, ...] hard-coded initial value used in sliders
+        X_label.append(X_info[i][2])   # C_label = ['Political_Goodwill_target',...] for sliders
+        globals()[name + name_append] = X_0[i]  # P_P_target = C_0[0] = 0.8 for model and sliders
+        if nt > 0:                         # S_P_P_0 = X_0[0] for stocks
+            globals()[name] = np.zeros(nt) # S_P_P = np.zeros(nt) for stocks
+
+    return X_names, X_0, X_label, X_idx_names
 
 # RR  Resources for RMNCH
 # R2  Healthcare financing (Resources for 2/3 facilities)
@@ -127,24 +140,16 @@ S_info = [
 
     ['L4_DC', 0.4, 'Delivery_Capacity_4/5'      ],
     ['L2_DC', 0.9, 'Delivery_Capacity_2/3'      ],
-    ['P_D',   0.2, 'Performance_Data'           ],
+    ['P_D',   0.6, 'Performance_Data'           ],
     ['L4_Q',  0.5, 'Quality_4/5'                ],
-    ['L2_Q',  0.2, 'Quality_2/3'                ],
+    ['L2_Q',  0.1, 'Quality_2/3'                ],
 ]
-S_names, S_0, S_label, S_idx_names = [],[],[],[]
 
-for i in range(len(S_info)):
-    name = S_info[i][0]
-    S_names.append(name)
-    S_idx_names.append([i, name])
-    S_0.append(    S_info[i][1])
-    S_label.append(S_info[i][2])
-    globals()[name + '_0'] = S_0[i]
-    globals()[name] = np.zeros(nt)
+S_names, S_0, S_label, S_idx_names = set_variables(S_info, nt=nt)
 
 # FACTORS
 # Names, initial values
-F_info = [
+FP_info = [
     ['Funding_MNCH',          0.2, 'Funding_MNCH'         ],
     ['Support_Linda_Mama',    0.2, 'Support_Linda_Mama'   ],
     ['Prioritization_MNCH',   0.2, 'Prioritization_MNCH'  ],
@@ -159,6 +164,10 @@ F_info = [
     ['Pos_supply_chain',      0.2, 'Pos_supply_chain'     ], 
     ['Increase_awareness_address_myths', 0.2, 'Increase_awareness_address_myths'],
 
+    ['INCREASE_ALL_P', 0.0, 'INCREASE_ALL_P'],
+]
+
+FN_info = [
     ['Delayed_disbursement',  0.2, 'Delayed_disbursement' ],
     ['Lack_promotion',        0.2, 'Lack_promotion'       ],
     ['Lack_action_depletion', 0.2, 'Lack_action_depletion'],
@@ -170,26 +179,17 @@ F_info = [
     ['Poor_management',       0.2, 'Poor_management'      ],
     ['Neg_supply_chain',      0.2, 'Neg_supply_chain'     ], 
 
-    ['L2_DC_target',          0.1, 'L2_Delivery_Capacity_Target'],
-    ['L4_DC_target',          0.9, 'L4_Delivery_Capacity_Target'],
+    ['DECREASE_ALL_N', 0.0, 'DECREASE_ALL_N'],
 ]
 
-F_names, F_0, F_label, F_idx_names = [],[],[],[]
-for i in range(len(F_info)):
-    name = F_info[i][0]
-    F_names.append(name)
-    F_idx_names.append([i, name])
-    F_0.append(    F_info[i][1])
-    F_label.append(F_info[i][2])
-    globals()[name] = F_0[i]
-
-# BL_Capacity_factor = 10
+FP_names, FP_0, FP_label, FP_idx_names = set_variables(FP_info)
+FN_names, FN_0, FN_label, FN_idx_names = set_variables(FN_info)
 
 B_info = [
-    ['BL_Capacity_factor',        10, 'BL_Capacity_Factor'                ],
+    ['BL_Capacity_factor',        20, 'BL_Capacity_Factor'                ],
     ['Initial_Negative_Predisp', 2, 'Initial_Negative_Predisp'],
     ['Health_outcomes__Predisp', 2.4, 'Health outcome -> Predisp hospital'],
-    ['L4_Q__Predisp',            0.2, 'L4/5 quality -> Predisp hospital'  ],
+    ['L4_Q__Predisp',            0.5, 'L4/5 quality -> Predisp hospital'  ],
     ['Health_Predisp',           0.2, 'Health_Predisp -> Predisp hospital'],
     ['Predisp_ANC_const_0',      0.4, 'Predisp_ANC_const_0'],
     ['Predisp_ANC_slope_0',      0.2, 'Predisp_ANC_slope_0'],
@@ -201,21 +201,14 @@ B_info = [
     ['Proximity__Predisp',       0.1, 'Proximity__Predisp'],  # 0.1
     ['Health_const_0',           0.8, 'Health_const_0'],
     ['Health_slope_0',           0.2, 'Health_slope_0'],
-    ['Q_Health_multiplier',              6., 'Q_Health_multiplier'],  # 6
+    ['Q_Health_multiplier',             10., 'Q_Health_multiplier'],  # 6
     ['Q_Health_L4_constant',            1.5, 'Q_Health_L4_constant'],  # 1.5
     ['Q_Health_L4_L2_difference',        1., 'Q_Health_L4_L2_difference'],  # 1
     ['Q_Health_L4_referral_difference', 0.5, 'Q_Health_L4_referral_difference'],  # 0.5
-    ['Q_Health_Home_negative',          0.5, 'Q_Health_Home_negative'],  # 0.5
+    ['Q_Health_Home_negative',          1.0, 'Q_Health_Home_negative'],  # 0.5
 ]
 
-B_names, B_0, B_label, B_idx_names = [],[],[],[]
-for i in range(len(B_info)):
-    name = B_info[i][0]
-    B_names.append(name)
-    B_idx_names.append([i, name])
-    B_0.append(    B_info[i][1])
-    B_label.append(B_info[i][2])
-    globals()[name] = B_0[i]
+B_names, B_0, B_label, B_idx_names = set_variables(B_info)
 
 # MODEL PARAMETER INFORMATION FOR SLIDERS
 C_info = [
@@ -235,30 +228,32 @@ C_info = [
     ['P_RR_target_0', 1.0, 'P_RR_target_0'],
     ['L4_HF_target_0', 0.8, 'L4_HF_target_0'],
     ['S_TF_target_0', 0.8, 'S_TF_target_0'],
+    ['L2_DC_target', 0.1, 'L2_Delivery_Capacity_Target'],
+    ['L4_DC_target', 0.9, 'L4_Delivery_Capacity_Target'],
 ]
 
 # SET UP OTHER INTERMEDIATE PYTHON VARIABLES FOR THE MODEL AND SLIDERS
-C_names, C_0, C_label, C_idx_names = [],[],[],[]
-for i in range(len(C_info)):
-    name = C_info[i][0]            # name of the variable is set, e.g. name = 'P_P_target'
-    C_names.append(name)           # C_names = ['P_P_target',...]
-    C_idx_names.append([i, name])  # C_idx_names = [[0,'P_P_target'],[1,P_D_target],...]
-    C_0.append(    C_info[i][1])   # C_0 = [0.8, 0.7, ...] hard-coded initial value used in sliders
-    C_label.append(C_info[i][2])   # C_label = ['Political_Goodwill_target',...] for sliders
-    globals()[name] = C_0[i]       # P_P_target = C_0[0] = 0.8 for model and sliders
+C_names, C_0, C_label, C_idx_names = set_variables(C_info)
 
-F_change   = np.zeros(len(F_0)) # changed values based on sliders
-F_original = np.zeros(len(F_0)) # original values
-for i in range(len(F_0)):
-    F_original[i] = F_0[i] # get the hard-coded value, originally from F_info
-    F_change[i]   = F_0[i] # initialize (don't copy the object, just the value)
+def set_F_change(F_0):
+    F_original = np.zeros(len(F_0)) # original values
+    F_change   = np.zeros(len(F_0)) # changed values based on sliders
+    for i in range(len(F_0)):
+        F_original[i] = F_0[i] # get the hard-coded value, originally from F_info
+        F_change[i]   = F_0[i] # initialize (don't copy the object, just the value)
+    return F_original, F_change
+
+FP_original, FP_change = set_F_change(FP_0)
+FN_original, FN_change = set_F_change(FN_0)
 
 y_0 = S_0
 
-def calc_y(S_values, F_values, B_values, C_values, P_values): # values from the sliders
+def calc_y(S_values, FP_values, FN_values, B_values, C_values, P_values): # values from the sliders
     # P_values = parameter values
-    for i in range(len(F_values)): # for each F-slider
-        F_change[i] = F_values[i] # F-parameter that is collected from the slider
+    for i in range(len(FP_values)): # for each F-slider
+        FP_change[i] = FP_values[i] # F-parameter that is collected from the slider
+    for i in range(len(FN_values)): # for each F-slider
+        FN_change[i] = FN_values[i] # F-parameter that is collected from the slider
 
     parameters['t_change'] = P_values[0] # slider value for time when the parameters change
     parameters['beta']     = P_values[1] # slider value for beta
@@ -270,7 +265,7 @@ def calc_y(S_values, F_values, B_values, C_values, P_values): # values from the 
     # anc_t, health_t, gest_age_t, deliveries, facilities = [[]]*nt, [[]]*nt, [[]]*nt, [[]]*nt, [[]]*nt # NG
     num_deliver_home, num_deliver_2, num_deliver_4, num_deliver_total = \
         np.zeros(nt), np.zeros(nt), np.zeros(nt), np.zeros(nt)
-    pos_HO, neg_HO, L2_D_Capacity, L4_D_Capacity = np.zeros([nt,3]), np.zeros([nt,3]), np.ones(nt), np.ones(nt)
+    pos_HO, neg_HO, L2_D_Capacity, L4_D_Capacity = np.zeros([nt,4]), np.zeros([nt,4]), np.ones(nt), np.ones(nt)
 
     for i in range(len(S_values)):
         y_t[0,i] = S_values[i]
@@ -291,14 +286,21 @@ def calc_y(S_values, F_values, B_values, C_values, P_values): # values from the 
     for mother in range(0, no_mothers):
         mothers.append(Mother(wealth[mother], education[mother], age[mother], no_children[mother], nt, B))
 
+    # OTHER MISCELLANEOUS FACTORS
+    L4_D_Capacity_Multiplier = 2
+
     # LOOP OVER EVERY TIME VALUE
     for t in range(0,nt-1):
         if t > parameters['t_change']: # IF TIME IS LARGER THAN THE t_change SLIDER VALUE
-            for idx, name in F_idx_names:
-                globals()[name] = F_change[idx] # then use the SLIDER value for the F-parameter, e.g., Visibility = 0.0
+            for idx, name in FP_idx_names:
+                globals()[name] = FP_change[idx] # then use the SLIDER value for the F-parameter, e.g., Visibility = 0.0
+            for idx, name in FN_idx_names:
+                globals()[name] = FN_change[idx]  # then use the SLIDER value for the F-parameter, e.g., Visibility = 0.0
         else:                                   # otherwise
-            for idx, name in F_idx_names:
-                globals()[name] = F_original[idx] # use the HARD-CODED value for the F-parameter saved in F_info
+            for idx, name in FP_idx_names:
+                globals()[name] = FP_original[idx] # use the HARD-CODED value for the F-parameter saved in F_info
+            for idx, name in FN_idx_names:
+                globals()[name] = FN_original[idx] # use the HARD-CODED value for the F-parameter saved in F_info
 
         t_all[t+1] = t_all[t] + 1 # increment by month
         gest_age, health, anc, delivery, facility = [], [], [], [], []
@@ -312,7 +314,7 @@ def calc_y(S_values, F_values, B_values, C_values, P_values): # values from the 
         #     L4_demand = 0
         # else:
         L2_D_Capacity[t] = L2_DC[t] * BL_Capacity_factor
-        L4_D_Capacity[t] = 2*L4_DC[t] * BL_Capacity_factor
+        L4_D_Capacity[t] = L4_DC[t] * BL_Capacity_factor * L4_D_Capacity_Multiplier
         L2_demand = logistic(num_deliver_2[t] / (L2_D_Capacity[t]))
         L4_demand = logistic(num_deliver_4[t] / (L4_D_Capacity[t]))
 
@@ -339,15 +341,15 @@ def calc_y(S_values, F_values, B_values, C_values, P_values): # values from the 
         dL4_HF_in     = P_RR[t]
         dS_TF_in      = P_RR[t]
         # dP_RR_out = dL2_HF_in + dL4_HF_in + dS_TF_in
-        # L2_target_combined_0 = L2_target_0 * L2_HF[t] # combined targets of L2_HR and L2_S =0.9*target of L2_HF
-        L2_target_combined_0 = L2_target_0 # combined targets of L2_HR and L2_S =0.9*target of L2_HF
+        L2_target_combined_0 = L2_target_0 * L2_HF[t] # combined targets of L2_HR and L2_S =0.9*target of L2_HF
+        # L2_target_combined_0 = L2_target_0 # combined targets of L2_HR and L2_S =0.9*target of L2_HF
         L2_HR_target  = L2_target_combined_0 * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
         L2_S_target   = L2_target_combined_0 * logistic([-Lack_action_depletion, Pos_supply_chain, -Neg_supply_chain, -L2_demand,2])
         dL2_HR_in     = L2_HF[t]
         dL2_S_in      = L2_HF[t]
         # dL2_HF_out = dL2_HR_in + dL2_S_in
-        # L4_target_combined_0 = L4_target_0 * L4_HF[t]
-        L4_target_combined_0 = L4_target_0
+        L4_target_combined_0 = L4_target_0 * L4_HF[t]
+        # L4_target_combined_0 = L4_target_0
         L4_HR_target  = L4_target_combined_0 * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
         L4_S_target   = L4_target_combined_0 * logistic([-Lack_action_depletion, Pos_supply_chain, -Neg_supply_chain, -L4_demand,2])
         dL4_HR_in     = L4_HF[t]
@@ -388,7 +390,7 @@ def calc_y(S_values, F_values, B_values, C_values, P_values): # values from the 
 
         L2_deliveries = 0
         for mother in mothers:
-            L2_net_capacity = 1 - L2_deliveries / L2_D_Capacity[t]
+            L2_net_capacity = 1 - (L2_deliveries + 1) / L2_D_Capacity[t] # add 1 to see if one more can be delivered
             mother.increase_age(l4_quality, l2_quality, proximity, L2_4_health_outcomes,
                                 L2_net_capacity, None)  # don't need the last argument
             if mother.delivered:
@@ -419,9 +421,12 @@ def calc_y(S_values, F_values, B_values, C_values, P_values): # values from the 
         for k in range(3):
             pos_HO[t+1,2-k] = sum((del_t1 ==  1) & (fac_t1 == k)) - sum((del_t ==  1) & (fac_t == k))
             neg_HO[t+1,2-k] = sum((del_t1 == -1) & (fac_t1 == k)) - sum((del_t == -1) & (fac_t == k))
+        pos_HO[t+1,3] = sum(pos_HO[t+1,:3]) # totals
+        neg_HO[t+1,3] = sum(neg_HO[t+1,:3])
 
-    L2_D_Capacity[nt-1] = L2_DC[nt-1] * BL_Capacity_factor # need to fill in the last time value
-    L4_D_Capacity[nt-1] = L4_DC[nt-1] * BL_Capacity_factor
+        if t==nt-2: # last value of t, need to add to these array for plotting
+            L2_D_Capacity[t+1] = L2_DC[t+1] * BL_Capacity_factor  # need to fill in the last time value
+            L4_D_Capacity[t+1] = L4_DC[t+1] * BL_Capacity_factor * L4_D_Capacity_Multiplier
 
     return t_all, y_t, \
            [ num_deliver_4, num_deliver_2, num_deliver_home, num_deliver_total, L4_D_Capacity, L2_D_Capacity ],\
@@ -453,17 +458,56 @@ colors = {
     'text': '#1f77b4'  # dark blue
 }
 
-def slider_markers(start=0, end=1, step=0.1, red=None):
-    nums = [int(num) if isinstance(num, int) or num%0.01 == 0 or num >= 1 else round(num,2) for num in np.arange(start, end+0.0000001, step)] 
-    marks = {num: {'label' : str(num), 'style': {'fontSize': 14}} for num in nums}
-    if red is not None:
-        if isinstance(red, int) or red%0.01 == 0 or red >= 1:
-            marks[int(red)] = {'label' : str(int(red)), 'style': {'fontSize': 14, 'color': '#f50'}}
-        else:
-            marks[red] = {'label' : str(red), 'style': {'fontSize': 14, 'color': '#f50'}}
-    return marks
+def slider_markers(start=0, end=1, red=None, num_steps=20):
+    eps = 0.0001
+    max_value = end + eps
+    min_value = start + eps
+
+    def set_marks(nums,red):
+        marks = {}
+        n_nums = len(nums)
+        for idx in range(n_nums):
+            num = nums[idx][0] # num is used in the dictionary
+            num1 = nums[min(idx+1,n_nums-1)][0] # next num
+            num0 = nums[max(idx-1,0)][0] # previous num
+            num_mid_0 = (num0 + num) / 2
+            num_mid_1 = (num + num1) / 2
+            num_str = str(nums[idx][1])
+            is_red = red and (red >= num_mid_0) and (red <= num_mid_1) # need <= for the highest num
+            if idx % 4 == 0 or is_red:
+                marks[num] = {'label': num_str, 'style': {'fontSize': 12}}
+                if is_red:
+                    marks[num]['style'] = {'fontSize': 12, 'color': '#f50'}
+                    red = num
+            else:
+                marks[num] = {'label': ''}
+        return marks,red
+
+    if end==1:
+        step = (end-start)/num_steps
+        nums = [[round(num,4),round(num,1)] for num in np.arange(min_value, max_value+step, step)]
+        if red is not None:
+            red = round(red,4)
+        marks,red = set_marks(nums,red)
+    elif end<1:
+        step = (end-start)/num_steps
+        nums = [[round(num,4),round(num,2)] for num in np.arange(min_value, max_value+step, step)]
+        if red is not None:
+            red = round(red,4)
+        marks,red = set_marks(nums,red)
+    else:
+        step = (end-start)/num_steps
+        nums = [[round(num,4),round(num,1)] for num in np.arange(min_value, max_value+step, step)]
+        if red is not None:
+            red = round(red,4)
+        marks,red = set_marks(nums,red)
+
+    return marks, step, min_value, max_value, red
 
 def make_slider(i,slider_label,slider_type,default_value,min_value=0,max_value=1):
+    if max_value == 0:
+        max_value = 1.0
+    marks, step, min_value, max_value, default_value = slider_markers(min_value, max_value, default_value)
     return html.Div(children=[
         html.Label(slider_label,
             style={},
@@ -473,7 +517,7 @@ def make_slider(i,slider_label,slider_type,default_value,min_value=0,max_value=1
             min=min_value,
             max=max_value,
             value=default_value,
-            marks=slider_markers(min_value, max_value, (max_value-min_value)/10, default_value),
+            marks=marks,
             step=None
         ),
     ])
@@ -491,7 +535,14 @@ def many_sliders(slider_labels,slider_type,default_values,min_values,max_values,
         
 # PF_sliders = many_sliders(F_label[0:13],'F_slider',F_0[0:13],np.zeros(len(F_0[0:13])),np.ones(len(F_0[0:13])),num_rows=3)
 # NF_sliders = many_sliders(F_label[14:25],'F_slider',F_0[14:25],np.zeros(len(F_0[14:25])),np.ones(len(F_0[14:25])),num_rows=2)
-F_sliders = many_sliders(F_label,'F_slider',F_0,np.zeros(len(F_0)),np.array(F_0)*4, num_rows=4)
+# FP_0_max = np.array(FP_0)*4
+# FP_0_max[-1] = 1.0
+# FN_0_max = np.array(FN_0)*4
+# FN_0_max[-1] = 1.0
+FP_sliders = many_sliders(FP_label,'FP_slider',FP_0,np.zeros(len(FP_0)),
+                          np.array(FP_0)*4, num_rows=3) # add 0 to 1 slider for INCREASE ALL
+FN_sliders = many_sliders(FN_label,'FN_slider',FN_0,np.zeros(len(FN_0)),
+                          np.array(FN_0)*4, num_rows=3)
 B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=5, num_cols=4, width=3)
 # many_sliders(labels, type used in Input() as an identifier of group of sliders, initial values, min, max, ...
 C_sliders = many_sliders(C_label,'C_slider',C_0,np.zeros(len(C_0)),np.ones(len(C_0)), num_rows=5, num_cols=4, width=3)
@@ -565,21 +616,15 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     #     ], width=3),
     # ],  className="pretty_container"),
 
-    # dbc.Row([
-    #     dbc.Col(html.H5('Positive Factors'),width=12),
-    #     PF_sliders,
-    #     ],className="pretty_container"
-    # ),
-    #
-    # dbc.Row([
-    #     dbc.Col(html.H5('Negative Factors'),width=12),
-    #     NF_sliders,
-    #     ],className="pretty_container"
-    # ),
+    dbc.Row([
+        dbc.Col(html.H5('Positive Factors'),width=12),
+        FP_sliders,
+        ],className="pretty_container"
+    ),
 
     dbc.Row([
-        dbc.Col(html.H5('Factors'),width=12),
-        F_sliders,
+        dbc.Col(html.H5('Negative Factors'),width=12),
+        FN_sliders,
         ],className="pretty_container"
     ),
 
@@ -614,7 +659,7 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
 # F_values_global = np.array(F_0)
 
 @app.callback(
-    dash.dependencies.Output('plot_1a', 'figure'),
+    dash.dependencies.Output('plot_1a', 'figure'), # component_id='plot_1a', component_property='figure'
     dash.dependencies.Output('plot_1b', 'figure'),
     dash.dependencies.Output('plot_1c', 'figure'),
     dash.dependencies.Output('plot_2a', 'figure'),
@@ -622,21 +667,35 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     dash.dependencies.Output('plot_2c', 'figure'),
     # each row is passed to update_graph (update the dashboard) as a separate argument in the same
     [Input({'type':'S_slider','index':ALL}, 'value'), # get all S-slider values, pass as 1st argument to update_graph()
-     Input({'type':'F_slider','index':ALL}, 'value'),
+     Input({'type':'FP_slider','index':ALL}, 'value'),
+     Input({'type':'FN_slider','index':ALL}, 'value'),
      Input({'type':'B_slider','index':ALL}, 'value'),
      Input({'type':'C_slider','index':ALL}, 'value'),
-     Input({'type':'P_slider','index':ALL}, 'value'),]
+     Input({'type':'P_slider','index':ALL}, 'value'),],
+    [State({'type':'FP_slider','index':ALL}, 'max'),
+     State({'type':'FN_slider','index':ALL}, 'max'),],
 )
-def update_graph(S_values,F_values,B_values,C_values,P_values): # each argument is one of Input(...)
+def update_graph(S_values,FP_values_all,FN_values_all,B_values,C_values,P_values,FP_max,FN_max): # each argument is one of Input(...)
     # S_values_global = np.array(S_values) # used for sensitivities
     # F_values_global = np.array(F_values)
+    FP_values = np.array(FP_values_all[:-1]) + FP_values_all[-1]
+    FN_values = np.array(FN_values_all[:-1]) * (1 - FN_values_all[-1])
     # SLIDER VALUES GETS PASSED TO THE MODEL TO COMPUTE THE MODEL RESULTS (e.g., y_t = stocks over time)
-    t_all, y_t, num_d, pos_neg_HO = calc_y(S_values,F_values,B_values,C_values,P_values)
+    t_all, y_t, num_d, pos_neg_HO = calc_y(S_values,FP_values,FN_values,B_values,C_values,P_values)
     # num_deliver_home, num_deliver_2, num_deliver_4, num_deliver_total, L2_D_Capacity, L4_D_Capacity = num_d
     k_range_1A  = range(0,6)
     k_range_1B  = range(6,11)
     k_range_1C  = range(11,16)
     k_range_2A  = range(16,len(S_label))
+    def y_max(k_range, y=y_t, increments=5):
+        if isinstance(y,list):
+            max_y = 0
+            for k in k_range:
+                max_y = max(max_y, max(y[k]))
+        else:
+            max_y = np.amax(np.array(y)[:, k_range])
+
+        return np.ceil(increments * max_y) / increments
 
     fig_1A = {
         'data':[{
@@ -647,7 +706,7 @@ def update_graph(S_values,F_values,B_values,C_values,P_values): # each argument 
         'layout': {
             'title':  'POLICY',
             'xaxis':{'title':'Time (months)'},
-            'yaxis':{'range':[0,.5], 'title':'Stocks (normalized units)'}
+            'yaxis':{'range':[0,y_max(k_range_1A)], 'title':'Stocks (normalized units)'}
         }
     }
 
@@ -660,7 +719,7 @@ def update_graph(S_values,F_values,B_values,C_values,P_values): # each argument 
         'layout': {
             'title':  'RESOURCES',
             'xaxis':{'title':'Time (months)'},
-            'yaxis':{'range':[0,0.8], 'title':'Stocks (normalized units)'}
+            'yaxis':{'range':[0,y_max(k_range_1B)], 'title':'Stocks (normalized units)'}
         }
     }
 
@@ -673,7 +732,7 @@ def update_graph(S_values,F_values,B_values,C_values,P_values): # each argument 
         'layout': {
             'title':  'SERVICE READINESS',
             'xaxis':{'title':'Time (months)'},
-            'yaxis':{'range':[0,0.5], 'title':'Stocks (normalized units)'}
+            'yaxis':{'range':[0,y_max(k_range_1C)], 'title':'Stocks (normalized units)'}
         }
     }
 
@@ -700,21 +759,21 @@ def update_graph(S_values,F_values,B_values,C_values,P_values): # each argument 
         'layout': {
             'title':  'Deliveries over time',
             'xaxis':{'title':'Time (months)'},
-            'yaxis':{'range':[0,20], 'title':'Deliveries'}
+            'yaxis':{'range':[0,y_max([0,1,2,4,5],num_d)], 'title':'Deliveries'}
         }
     }
 
-    HO_labels = ['Home delivery','L2', 'L4']
+    HO_labels = ['Home delivery','L2', 'L4', 'Total']
     fig_2C = {
         'data':[{
             'x': t_all,
             'y': pos_neg_HO[1][:,k],
             'name': HO_labels[k]
-        } for k in range(3)],
+        } for k in [2,1,0,3]],
         'layout': {
             'title':  'Negative birth outcomes over time',
             'xaxis':{'title':'Time (months)'},
-            'yaxis':{'range':[0,10], 'title':'Number of dyads'}
+            'yaxis':{'range':[0,y_max([2,1,0,3],pos_neg_HO[1])], 'title':'Number of dyads'}
         }
     }
 

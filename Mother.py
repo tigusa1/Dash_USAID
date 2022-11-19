@@ -64,18 +64,20 @@ class Mother:
         if logistic([logit_predisp_l4 - 2]) > rand:
             self._facility = 2
             self.logit_health += Q_Health_multiplier*(l4_quality-1/2) + Q_Health_L4_constant
-        elif logistic([logit_predisp_l4 + logit_predisp_l2_l4 - 2]) > rand:
-            if L2_net_capacity > 0.0: # if there is room
-                self._facility = 1
-                self.logit_health += Q_Health_multiplier*(l2_quality-1/2) + \
-                                     Q_Health_L4_constant - Q_Health_L4_L2_difference
-            else: # otherwise, go to level 4/5, but not as healthy
-                self._facility = 2
-                self.logit_health += Q_Health_multiplier*(l4_quality-1/2) + \
-                                     Q_Health_L4_constant - Q_Health_L4_referral_difference
         else:
-            self._facility = 0
-            self.logit_health += -Q_Health_Home_negative
+            rand = np.random.uniform(0, 1, 1)
+            if logistic([logit_predisp_l2_l4 - 2]) > rand:
+                if L2_net_capacity > 0.0: # if there is room
+                    self._facility = 1
+                    self.logit_health += Q_Health_multiplier*(l2_quality-1/2) + \
+                                         Q_Health_L4_constant - Q_Health_L4_L2_difference
+                else: # otherwise, go to level 4/5, but not as healthy
+                    self._facility = 2
+                    self.logit_health += Q_Health_multiplier*(l4_quality-1/2) + \
+                                         Q_Health_L4_constant - Q_Health_L4_referral_difference
+            else:
+                self._facility = 0
+                self.logit_health += -Q_Health_Home_negative
 
     def deliver(self):
         """delivery outcome"""
