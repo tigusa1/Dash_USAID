@@ -1,6 +1,6 @@
 import dash
 from dash import dcc
-from dash import html
+from dash import html, callback_context
 from dash.dependencies import Input, Output, State, MATCH, ALL
 import dash_bootstrap_components as dbc # conda install -c conda-forge dash-bootstrap-components
 import pandas as pd
@@ -163,8 +163,16 @@ FP_info = [
     ['Training_incentives',   0.2, 'Training_incentives'  ], 
     ['Pos_supply_chain',      0.2, 'Pos_supply_chain'     ], 
     ['Increase_awareness_address_myths', 0.2, 'Increase_awareness_address_myths'],
+]
 
+FP_combination_info = [
     ['INCREASE_ALL_P', 0.0, 'INCREASE_ALL_P'],
+    ['INCREASE_ALL_P', 0.0, 'INCREASE_SOME_P'],
+]
+
+FN_combination_info = [
+    ['DECREASE_ALL_N', 0.0, 'DECREASE_ALL_N'],
+    ['DECREASE_ALL_N', 0.0, 'DECREASE_SOME_N'],
 ]
 
 FN_info = [
@@ -178,12 +186,14 @@ FN_info = [
     ['Burn_out',              0.2, 'Burn_out'             ], 
     ['Poor_management',       0.2, 'Poor_management'      ],
     ['Neg_supply_chain',      0.2, 'Neg_supply_chain'     ], 
-
-    ['DECREASE_ALL_N', 0.0, 'DECREASE_ALL_N'],
 ]
 
 FP_names, FP_0, FP_label, FP_idx_names = set_variables(FP_info)
+FP_combination_names, FP_combination_0, FP_combination_label, FP_combination_idx_names = \
+    set_variables(FP_combination_info)
 FN_names, FN_0, FN_label, FN_idx_names = set_variables(FN_info)
+FN_combination_names, FN_combination_0, FN_combination_label, FN_combination_idx_names = \
+    set_variables(FN_combination_info)
 
 B_info = [
     ['BL_Capacity_factor',        20, 'BL_Capacity_Factor'                ],
@@ -213,7 +223,6 @@ B_names, B_0, B_label, B_idx_names = set_variables(B_info)
 # MODEL PARAMETER INFORMATION FOR SLIDERS
 C_info = [
     ['P_P_target', 0.8, 'Political_Goodwill_target'],
-    ['P_D_target', 0.7, 'Data_Performance_target'],
     ['P_D_target', 0.7, 'Data_Performance_target'],
     ['L2_HF_target_0', 0.8, 'L2/3_HC_Financing_target'],
     ['L2_target_0', 0.9, 'L2_target_0'],
@@ -247,6 +256,9 @@ FP_original, FP_change = set_F_change(FP_0)
 FN_original, FN_change = set_F_change(FN_0)
 
 y_0 = S_0
+
+def get_factors_0():
+    return FP_0, FN_0
 
 def calc_y(S_values, FP_values, FN_values, B_values, C_values, P_values): # values from the sliders
     # P_values = parameter values
@@ -509,8 +521,10 @@ def make_slider(i,slider_label,slider_type,default_value,min_value=0,max_value=1
         max_value = 1.0
     marks, step, min_value, max_value, default_value = slider_markers(min_value, max_value, default_value)
     return html.Div(children=[
-        html.Label(slider_label,
-            style={},
+        html.Button(slider_label,
+                    id={'type':slider_type + '_button', 'index': i},
+                    n_clicks=0,
+                    style={'color' : '#000'}, # red : f50
        ),
         dcc.Slider(
             id={'type':slider_type,'index':i},
@@ -533,16 +547,16 @@ def many_sliders(slider_labels,slider_type,default_values,min_values,max_values,
         ],width=width) for k in range(0,num_cols)
     ],style={'width':'100%'})
         
-# PF_sliders = many_sliders(F_label[0:13],'F_slider',F_0[0:13],np.zeros(len(F_0[0:13])),np.ones(len(F_0[0:13])),num_rows=3)
-# NF_sliders = many_sliders(F_label[14:25],'F_slider',F_0[14:25],np.zeros(len(F_0[14:25])),np.ones(len(F_0[14:25])),num_rows=2)
-# FP_0_max = np.array(FP_0)*4
-# FP_0_max[-1] = 1.0
-# FN_0_max = np.array(FN_0)*4
-# FN_0_max[-1] = 1.0
 FP_sliders = many_sliders(FP_label,'FP_slider',FP_0,np.zeros(len(FP_0)),
                           np.array(FP_0)*4, num_rows=3) # add 0 to 1 slider for INCREASE ALL
+FP_combination_sliders = many_sliders(FP_combination_label,'FP_combination_slider',FP_combination_0,
+                                      np.zeros(len(FP_combination_0)),np.ones(len(FP_combination_0)),
+                                      num_rows=1, num_cols=3, width=4)
 FN_sliders = many_sliders(FN_label,'FN_slider',FN_0,np.zeros(len(FN_0)),
                           np.array(FN_0)*4, num_rows=3)
+FN_combination_sliders = many_sliders(FN_combination_label,'FN_combination_slider',FN_combination_0,
+                                      np.zeros(len(FN_combination_0)),np.ones(len(FN_combination_0)),
+                                      num_rows=1, num_cols=3, width=4)
 B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=5, num_cols=4, width=3)
 # many_sliders(labels, type used in Input() as an identifier of group of sliders, initial values, min, max, ...
 C_sliders = many_sliders(C_label,'C_slider',C_0,np.zeros(len(C_0)),np.ones(len(C_0)), num_rows=5, num_cols=4, width=3)
@@ -617,6 +631,18 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     # ],  className="pretty_container"),
 
     dbc.Row([
+        dbc.Col([
+            html.H5('Positive Combination Factors'),
+            FP_combination_sliders
+        ], width=6),
+        dbc.Col([
+            html.H5('Negative Combination Factors'),
+            FN_combination_sliders
+        ], width=6),
+    ], className="pretty_container"
+    ),
+
+    dbc.Row([
         dbc.Col(html.H5('Positive Factors'),width=12),
         FP_sliders,
         ],className="pretty_container"
@@ -658,6 +684,67 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
 # S_values_global = np.array(S_0) # used for sensitivities
 # F_values_global = np.array(F_0)
 
+def update_colors(F_clicks, F_styles, F_combination_styles):
+    idx = 0
+    F_combination_styles[1]['color'] = '#000' # default color if no F_slider_buttons are selected
+    for click in F_clicks:
+        if click % 2 == 1:
+            F_combination_styles[1]['color'] = '#f50'
+            F_styles[idx]['color'] = '#f50'
+        else:
+            F_styles[idx]['color'] = '#000'
+        idx += 1
+    return F_styles, F_combination_styles
+
+@app.callback(
+    dash.dependencies.Output({'type': 'FP_slider_button', 'index': ALL}, 'style'),
+    dash.dependencies.Output({'type': 'FP_combination_slider_button', 'index': ALL}, 'style'),
+    [Input({'type': 'FP_slider_button', 'index': ALL}, 'n_clicks'),],
+    [State({'type': 'FP_slider_button', 'index': ALL}, 'style'),
+     State({'type': 'FP_combination_slider_button', 'index': ALL}, 'style'),],
+)
+def update_labels(FP_clicks, FP_styles, FP_combination_styles):
+    return update_colors(FP_clicks, FP_styles, FP_combination_styles)
+@app.callback(
+    dash.dependencies.Output({'type': 'FN_slider_button', 'index': ALL}, 'style'),
+    dash.dependencies.Output({'type': 'FN_combination_slider_button', 'index': ALL}, 'style'),
+    [Input({'type': 'FN_slider_button', 'index': ALL}, 'n_clicks'),],
+    [State({'type': 'FN_slider_button', 'index': ALL}, 'style'),
+     State({'type': 'FN_combination_slider_button', 'index': ALL}, 'style'),],
+)
+def update_labels(FN_clicks, FN_styles, FN_combination_styles):
+    return update_colors(FN_clicks, FN_styles, FN_combination_styles)
+
+@app.callback(
+    dash.dependencies.Output({'type': 'FP_slider', 'index': ALL}, 'value'),  # simple trial
+    dash.dependencies.Output({'type': 'FN_slider', 'index': ALL}, 'value'),  # simple trial
+    [Input({'type': 'FP_combination_slider', 'index': ALL}, 'value'),
+     Input({'type': 'FN_combination_slider', 'index': ALL}, 'value'),],
+    [State({'type': 'FP_slider', 'index': ALL}, 'value'),
+     State({'type': 'FN_slider', 'index': ALL}, 'value'),
+     State({'type': 'FP_slider', 'index': ALL}, 'max'),
+     State({'type': 'FN_slider', 'index': ALL}, 'max'),
+     State({'type': 'FP_slider_button', 'index': ALL}, 'style'),
+     State({'type': 'FN_slider_button', 'index': ALL}, 'style')]
+)
+def update_combination_slider(FP_combination_values, FN_combination_values, FP_values, FN_values,
+                              FP_max, FN_max, FP_style, FN_style):
+    FP_0,FN_0 = get_factors_0()
+    def update_F_values(F_values, F_0, F_max, F_style, F_combination_values):
+        F_values = np.array(F_values)
+        F_max    = np.array(F_max)
+        F_values      = F_0 + (F_max - F_0) * F_combination_values[0]
+        F_some_values = F_0 + (F_max - F_0) * F_combination_values[1]
+        idx = 0
+        for style in F_style:
+            if (style['color'] != '#000'): # not black
+                F_values[idx] = F_some_values[idx]
+            idx += 1
+        return list(F_values)
+
+    return update_F_values(FP_values, FP_0, FP_max, FP_style, FP_combination_values), \
+           update_F_values(FN_values, FN_0, FN_max, FN_style, FN_combination_values)
+
 @app.callback(
     dash.dependencies.Output('plot_1a', 'figure'), # component_id='plot_1a', component_property='figure'
     dash.dependencies.Output('plot_1b', 'figure'),
@@ -675,11 +762,9 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     [State({'type':'FP_slider','index':ALL}, 'max'),
      State({'type':'FN_slider','index':ALL}, 'max'),],
 )
-def update_graph(S_values,FP_values_all,FN_values_all,B_values,C_values,P_values,FP_max,FN_max): # each argument is one of Input(...)
+def update_graph(S_values,FP_values,FN_values,B_values,C_values,P_values,FP_max,FN_max): # each argument is one of Input(...)
     # S_values_global = np.array(S_values) # used for sensitivities
     # F_values_global = np.array(F_values)
-    FP_values = np.array(FP_values_all[:-1]) + FP_values_all[-1]
-    FN_values = np.array(FN_values_all[:-1]) * (1 - FN_values_all[-1])
     # SLIDER VALUES GETS PASSED TO THE MODEL TO COMPUTE THE MODEL RESULTS (e.g., y_t = stocks over time)
     t_all, y_t, num_d, pos_neg_HO = calc_y(S_values,FP_values,FN_values,B_values,C_values,P_values)
     # num_deliver_home, num_deliver_2, num_deliver_4, num_deliver_total, L2_D_Capacity, L4_D_Capacity = num_d
