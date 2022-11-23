@@ -90,28 +90,9 @@ FP_combination_info = [
     ['INCREASE_ALL_P', 0.0, 'INCREASE_SOME_P'],
 ]
 
-FN_combination_info = [
-    ['DECREASE_ALL_N', 0.0, 'DECREASE_ALL_N'],
-    ['DECREASE_ALL_N', 0.0, 'DECREASE_SOME_N'],
-]
-
-FN_info = [
-    # ['Delayed_disbursement',  0.2, 'Delayed_disbursement' ],
-    # ['Lack_promotion',        0.2, 'Lack_promotion'       ],
-    # ['Lack_action_depletion', 0.2, 'Lack_action_depletion'],
-    # ['Inadequate_financing',  0.2, 'Inadequate_financing' ],
-    # ['Lack_adherence_budget', 0.2, 'Lack_adherence_budget'],
-    # ['Delay_hiring',          0.2, 'Delay_hiring'         ],
-    # ['Frequent_transfer',     0.2, 'Frequent_transfer'    ],
-    # ['Burn_out',              0.2, 'Burn_out'             ],
-]
-
 FP_names, FP_0, FP_label, FP_idx_names = set_variables(FP_info)
 FP_combination_names, FP_combination_0, FP_combination_label, FP_combination_idx_names = \
     set_variables(FP_combination_info)
-FN_names, FN_0, FN_label, FN_idx_names = set_variables(FN_info)
-FN_combination_names, FN_combination_0, FN_combination_label, FN_combination_idx_names = \
-    set_variables(FN_combination_info)
 
 B_info = [
     ['BL_Capacity_factor',        20, 'BL_Capacity_Factor'                ],
@@ -159,19 +140,16 @@ def set_F_change(F_0):
     return F_original, F_change
 
 FP_original, FP_change = set_F_change(FP_0)
-FN_original, FN_change = set_F_change(FN_0)
 
 y_0 = S_0
 
 def get_factors_0():
-    return FP_0, FN_0
+    return FP_0
 
-def calc_y(S_values, FP_values, FN_values, B_values, C_values, P_values): # values from the sliders
+def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the sliders
     # P_values = parameter values
     for i in range(len(FP_values)): # for each F-slider
         FP_change[i] = FP_values[i] # F-parameter that is collected from the slider
-    for i in range(len(FN_values)): # for each F-slider
-        FN_change[i] = FN_values[i] # F-parameter that is collected from the slider
 
     parameters['t_change'] = P_values[0] # slider value for time when the parameters change
     parameters['beta']     = P_values[1] # slider value for beta
@@ -212,13 +190,9 @@ def calc_y(S_values, FP_values, FN_values, B_values, C_values, P_values): # valu
         if t > parameters['t_change']: # IF TIME IS LARGER THAN THE t_change SLIDER VALUE
             for idx, name in FP_idx_names:
                 globals()[name] = FP_change[idx] # then use the SLIDER value for the F-parameter, e.g., Visibility = 0.0
-            for idx, name in FN_idx_names:
-                globals()[name] = FN_change[idx]  # then use the SLIDER value for the F-parameter, e.g., Visibility = 0.0
         else:                                   # otherwise
             for idx, name in FP_idx_names:
                 globals()[name] = FP_original[idx] # use the HARD-CODED value for the F-parameter saved in F_info
-            for idx, name in FN_idx_names:
-                globals()[name] = FN_original[idx] # use the HARD-CODED value for the F-parameter saved in F_info
 
         t_all[t+1] = t_all[t] + 1 # increment by month
         gest_age, health, anc, delivery, facility = [], [], [], [], []
@@ -369,11 +343,6 @@ FP_sliders = many_sliders(FP_label,'FP_slider',FP_0,np.zeros(len(FP_0)),
 FP_combination_sliders = many_sliders(FP_combination_label,'FP_combination_slider',FP_combination_0,
                                       np.zeros(len(FP_combination_0)),np.ones(len(FP_combination_0)),
                                       num_rows=1, num_cols=2, width=6)
-FN_sliders = many_sliders(FN_label,'FN_slider',FN_0,np.zeros(len(FN_0)),
-                          np.array(FN_0)*4, num_rows=3)
-FN_combination_sliders = many_sliders(FN_combination_label,'FN_combination_slider',FN_combination_0,
-                                      np.zeros(len(FN_combination_0)),np.ones(len(FN_combination_0)),
-                                      num_rows=1, num_cols=3, width=4)
 B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=4, num_cols=4, width=3)
 # many_sliders(labels, type used in Input() as an identifier of group of sliders, initial values, min, max, ...
 C_sliders = many_sliders(C_label,'C_slider',C_0,np.zeros(len(C_0)),np.ones(len(C_0)), num_rows=3, num_cols=4, width=3)
@@ -473,31 +442,16 @@ def update_colors(F_clicks, F_styles, F_combination_styles):
 )
 def update_labels(FP_clicks, FP_styles, FP_combination_styles):
     return update_colors(FP_clicks, FP_styles, FP_combination_styles)
-@app.callback(
-    dash.dependencies.Output({'type': 'FN_slider_button', 'index': ALL}, 'style'),
-    dash.dependencies.Output({'type': 'FN_combination_slider_button', 'index': ALL}, 'style'),
-    [Input({'type': 'FN_slider_button', 'index': ALL}, 'n_clicks'),],
-    [State({'type': 'FN_slider_button', 'index': ALL}, 'style'),
-     State({'type': 'FN_combination_slider_button', 'index': ALL}, 'style'),],
-)
-def update_labels(FN_clicks, FN_styles, FN_combination_styles):
-    return update_colors(FN_clicks, FN_styles, FN_combination_styles)
 
 @app.callback(
     dash.dependencies.Output({'type': 'FP_slider', 'index': ALL}, 'value'),  # simple trial
-    dash.dependencies.Output({'type': 'FN_slider', 'index': ALL}, 'value'),  # simple trial
-    [Input({'type': 'FP_combination_slider', 'index': ALL}, 'value'),
-     Input({'type': 'FN_combination_slider', 'index': ALL}, 'value'),],
+    [Input({'type': 'FP_combination_slider', 'index': ALL}, 'value'),],
     [State({'type': 'FP_slider', 'index': ALL}, 'value'),
-     State({'type': 'FN_slider', 'index': ALL}, 'value'),
      State({'type': 'FP_slider', 'index': ALL}, 'max'),
-     State({'type': 'FN_slider', 'index': ALL}, 'max'),
-     State({'type': 'FP_slider_button', 'index': ALL}, 'style'),
-     State({'type': 'FN_slider_button', 'index': ALL}, 'style')]
+     State({'type': 'FP_slider_button', 'index': ALL}, 'style'),]
 )
-def update_combination_slider(FP_combination_values, FN_combination_values, FP_values, FN_values,
-                              FP_max, FN_max, FP_style, FN_style):
-    FP_0,FN_0 = get_factors_0()
+def update_combination_slider(FP_combination_values, FP_values, FP_max, FP_style):
+    FP_0 = get_factors_0()
     def update_F_values(F_values, F_0, F_max, F_style, F_combination_values):
         F_values = np.array(F_values)
         F_max    = np.array(F_max)
@@ -510,8 +464,7 @@ def update_combination_slider(FP_combination_values, FN_combination_values, FP_v
             idx += 1
         return list(F_values)
 
-    return update_F_values(FP_values, FP_0, FP_max, FP_style, FP_combination_values), \
-           update_F_values(FN_values, FN_0, FN_max, FN_style, FN_combination_values)
+    return update_F_values(FP_values, FP_0, FP_max, FP_style, FP_combination_values)
 
 @app.callback(
     dash.dependencies.Output('plot_1a', 'figure'), # component_id='plot_1a', component_property='figure'
@@ -522,18 +475,16 @@ def update_combination_slider(FP_combination_values, FN_combination_values, FP_v
     # each row is passed to update_graph (update the dashboard) as a separate argument in the same
     [Input({'type':'S_slider','index':ALL}, 'value'), # get all S-slider values, pass as 1st argument to update_graph()
      Input({'type':'FP_slider','index':ALL}, 'value'),
-     Input({'type':'FN_slider','index':ALL}, 'value'),
      Input({'type':'B_slider','index':ALL}, 'value'),
      Input({'type':'C_slider','index':ALL}, 'value'),
      Input({'type':'P_slider','index':ALL}, 'value'),],
-    [State({'type':'FP_slider','index':ALL}, 'max'),
-     State({'type':'FN_slider','index':ALL}, 'max'),],
+    [State({'type':'FP_slider','index':ALL}, 'max'),],
 )
-def update_graph(S_values,FP_values,FN_values,B_values,C_values,P_values,FP_max,FN_max): # each argument is one of Input(...)
+def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each argument is one of Input(...)
     # S_values_global = np.array(S_values) # used for sensitivities
     # F_values_global = np.array(F_values)
     # SLIDER VALUES GETS PASSED TO THE MODEL TO COMPUTE THE MODEL RESULTS (e.g., y_t = stocks over time)
-    t_all, y_t, num_d, pos_neg_HO = calc_y(S_values,FP_values,FN_values,B_values,C_values,P_values)
+    t_all, y_t, num_d, pos_neg_HO = calc_y(S_values,FP_values,B_values,C_values,P_values)
     # num_deliver_home, num_deliver_2, num_deliver_4, num_deliver_total, L2_D_Capacity, L4_D_Capacity = num_d
     k_range_1B  = range(0,4)
     k_range_1C  = range(4,8)
@@ -616,23 +567,6 @@ def update_graph(S_values,FP_values,FN_values,B_values,C_values,P_values,FP_max,
     }
 
     return fig_1B, fig_1C, fig_2A, fig_2B, fig_2C
-
-# SENSITIVITY (NOT NEEDED)
-# delta = 0.1
-# @app.callback(
-#     Output({'type':'sensitivity_output','index':MATCH},'children'),
-#   [ Input({'type':'sensitivity_variable','index':MATCH},'n_clicks') ],
-#   [ State({'type':'sensitivity_variable','index':MATCH},'id') ]
-# )
-# def calc_sensitivity(n,id_match):
-#     i = id_match['index']
-#     F_values_delta = F_values_global
-#     F_values_delta[i] = F_values_global[i] + 0.01
-#     P_values = np.array([ parameters['t_change'], parameters['beta']])
-#     y_t      = calc_y(S_values_global,F_values_global,P_values)
-#     y_t_delta= calc_y(S_values_global,F_values_delta, P_values)
-#     Dy = (y_t_delta[-1] - y_t[-1])/delta
-#     return Dy[0]
 
 # CAN LEAVE IN FOR PYTHONEVERYWHERE
 if __name__ == '__main__':
