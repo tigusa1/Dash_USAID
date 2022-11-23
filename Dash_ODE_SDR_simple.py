@@ -7,7 +7,7 @@ import numpy as np
 import plotly.graph_objects as go
 import random
 
-from Mother import Mother
+from Mother import Mother_simplified
 from Dash_ODE_Methods import logistic, many_sliders, make_slider
 
 random.seed(10)
@@ -34,63 +34,6 @@ no_mothers  = len(age)
 
 proximity = 0.8
 
-# CLASS MOTHER
-# class Mother_simple():
-#     def __init__(self, urban=True, wealth=False):
-#         self.urban = urban # True or False
-#         self.wealth = wealth
-#         self.proportion_healthy = 0.4
-#         self.proportion_d_home = 0.3
-#         rand = np.random.random(1)[0]
-#         if rand < self.proportion_d_home:
-#             self.prefer_d_home = True
-#         else:
-#             self.prefer_d_home = False
-#         self.QoC_threshold = 0.3
-#         self.QoC_home = 0.1
-#         self.QoC_healthy_mother_threshold = 0.03
-#         self.QoC_healthy_baby_threshold = 0.04
-#
-#     def health_BL(self):
-#         if np.random.random(1)[0] < self.proportion_healthy:
-#             health_status_at_BL = 1;
-#         else:
-#             health_status_at_BL = 0;
-#         return health_status_at_BL
-#
-#     def decide(self, QoC_2, QoC_4):
-#         if self.proportion_d_home and QoC_2 < self.QoC_threshold and QoC_4 < self.QoC_threshold:
-#             self.decision = 0
-#         elif QoC_2 < QoC_4:
-#             self.decision = 2
-#         else:
-#             self.decision = 1
-#         return self.decision # e.g., 0=home delivery, 1=2/3 delivery, 2=4/5 delivery
-#
-#     def health_outcome(self, QoC_2, QoC_4):
-#         QoCs = (self.QoC_home, QoC_2, QoC_4)
-#         QoC = QoCs[self.decision]
-#         QoC_received = QoC * np.random.random(1)[0]
-#         if self.QoC_healthy_mother_threshold < QoC_received:
-#             health_outcome_of_mother = 0
-#         else:
-#             health_outcome_of_mother = 1
-#
-#         if self.QoC_healthy_baby_threshold < QoC_received:
-#             health_outcome_of_baby = 0
-#         else:
-#             health_outcome_of_baby = 1
-#
-#         return health_outcome_of_baby, health_outcome_of_mother
-#
-# GENERATE MOTHERS
-# mothers = []
-# num_mothers = 100
-# proportion_wealthy = 0.1
-# proportion_urban = 0.3
-# for i in range(num_mothers):
-#     mothers.append(Mother(urban=(np.random.random(1)[0] < proportion_urban),
-#                           wealth=(np.random.random(1)[0] < proportion_urban)))
 def set_variables(X_info, name_append = '', nt=0):
     X_names, X_0, X_label, X_idx_names = [], [], [], []
     for i in range(len(X_info)):
@@ -116,28 +59,14 @@ nt = 48 # number of months
 # RS  SDR transition financing
 # PDS Policy: Development support
 
-# P_P, P_A, P_D
 # Names, initial values
 S_info = [
-    ['P_P',   0.2, 'Political_Goodwill'         ],
-    ['P_A',   0.2, 'SDR_Adoption_Other_Factors' ],
-    ['P_M',   0.2, 'Advocacy/Media'             ],
-    ['P_I',   0.2, 'Stakeholder_Involvement'    ],
-    ['P_SP',  0.2, 'Support_for_Policy'         ],
-
-    ['P_DP',  0.2, 'Development_Support'        ],
     ['P_RR',  0.2, 'Resources_RMNCH'            ],
     ['L4_HF', 0.2, 'H_Financing_4/5'            ],
     ['L2_HF', 0.2, 'H_Financing_2/3'            ],
-    ['S_TF',  0.2, 'SDR_Transition_Financing'   ],
-
-    ['L4_HR', 0.2, 'HR_Readiness_4/5'           ],
-    ['L4_S',  0.2, 'Supplies/Infrastructure_4/5'],
-    ['L2_HR', 0.2, 'HR_Readiness_2/3'           ],
-    ['L2_S',  0.2, 'Supplies/Infrastructure_2/3'],
-    ['S_T',   0.2, 'SDR_HR_Training'            ],
     ['S_FR',  0.2, 'SDR_Facility_Repurposing'   ],
-
+    ['L2_HR', 0.2, 'HR_Readiness_2/3'           ],
+    ['L4_HR', 0.2, 'HR_Readiness_4/5'           ],
     ['L4_DC', 0.4, 'Delivery_Capacity_4/5'      ],
     ['L2_DC', 0.9, 'Delivery_Capacity_2/3'      ],
     ['P_D',   0.6, 'Performance_Data'           ],
@@ -148,21 +77,12 @@ S_info = [
 S_names, S_0, S_label, S_idx_names = set_variables(S_info, nt=nt)
 
 # FACTORS
-# Names, initial values
 FP_info = [
     ['Funding_MNCH',          0.2, 'Funding_MNCH'         ],
-    ['Support_Linda_Mama',    0.2, 'Support_Linda_Mama'   ],
-    ['Prioritization_MNCH',   0.2, 'Prioritization_MNCH'  ],
     ['Adherence_budget',      0.2, 'Adherence_budget'     ],
     ['Employee_incentives',   0.2, 'Employee_incentives'  ],
-    ['Visibility',            0.2, 'Visibility'           ],
-    ['Timely_promotions',     0.2, 'Timely_promotions'    ], 
-    ['Action_depletion',      0.2, 'Action_depletion'     ], 
-    ['Increase_awareness',    0.2, 'Increase_awareness'   ], 
-    ['Strong_referrals',      0.2, 'Strong_referrals'     ], 
+    ['Strong_referrals',      0.2, 'Strong_referrals'     ],
     ['Training_incentives',   0.2, 'Training_incentives'  ], 
-    ['Pos_supply_chain',      0.2, 'Pos_supply_chain'     ], 
-    ['Increase_awareness_address_myths', 0.2, 'Increase_awareness_address_myths'],
 ]
 
 FP_combination_info = [
@@ -176,16 +96,14 @@ FN_combination_info = [
 ]
 
 FN_info = [
-    ['Delayed_disbursement',  0.2, 'Delayed_disbursement' ],
-    ['Lack_promotion',        0.2, 'Lack_promotion'       ],
-    ['Lack_action_depletion', 0.2, 'Lack_action_depletion'],
-    ['Inadequate_financing',  0.2, 'Inadequate_financing' ],
-    ['Lack_adherence_budget', 0.2, 'Lack_adherence_budget'], 
-    ['Delay_hiring',          0.2, 'Delay_hiring'         ], 
-    ['Frequent_transfer',     0.2, 'Frequent_transfer'    ], 
-    ['Burn_out',              0.2, 'Burn_out'             ], 
-    ['Poor_management',       0.2, 'Poor_management'      ],
-    ['Neg_supply_chain',      0.2, 'Neg_supply_chain'     ], 
+    # ['Delayed_disbursement',  0.2, 'Delayed_disbursement' ],
+    # ['Lack_promotion',        0.2, 'Lack_promotion'       ],
+    # ['Lack_action_depletion', 0.2, 'Lack_action_depletion'],
+    # ['Inadequate_financing',  0.2, 'Inadequate_financing' ],
+    # ['Lack_adherence_budget', 0.2, 'Lack_adherence_budget'],
+    # ['Delay_hiring',          0.2, 'Delay_hiring'         ],
+    # ['Frequent_transfer',     0.2, 'Frequent_transfer'    ],
+    # ['Burn_out',              0.2, 'Burn_out'             ],
 ]
 
 FP_names, FP_0, FP_label, FP_idx_names = set_variables(FP_info)
@@ -201,14 +119,7 @@ B_info = [
     ['Health_outcomes__Predisp', 2.4, 'Health outcome -> Predisp hospital'],
     ['L4_Q__Predisp',            0.5, 'L4/5 quality -> Predisp hospital'  ],
     ['Health_Predisp',           0.2, 'Health_Predisp -> Predisp hospital'],
-    ['Predisp_ANC_const_0',      0.4, 'Predisp_ANC_const_0'],
-    ['Predisp_ANC_slope_0',      0.2, 'Predisp_ANC_slope_0'],
     ['Predisp_L2_L4',             4., 'Predisp_L2_L4'],  # 1
-    ['Wealth__Predisp',          0.2, 'Wealth__Predisp'],  # 0.2
-    ['Education__Predisp',      0.02, 'Education__Predisp'],  # 0.02
-    ['Age__Predisp',           0.001, 'Age__Predisp'],  # 0.001
-    ['No_Children__Predisp',    0.05, 'No_Children__Predisp'],  # 0.05
-    ['Proximity__Predisp',       0.1, 'Proximity__Predisp'],  # 0.1
     ['Health_const_0',           0.8, 'Health_const_0'],
     ['Health_slope_0',           0.2, 'Health_slope_0'],
     ['Q_Health_multiplier',             10., 'Q_Health_multiplier'],  # 6
@@ -222,7 +133,6 @@ B_names, B_0, B_label, B_idx_names = set_variables(B_info)
 
 # MODEL PARAMETER INFORMATION FOR SLIDERS
 C_info = [
-    ['P_P_target', 0.8, 'Political_Goodwill_target'],
     ['P_D_target', 0.7, 'Data_Performance_target'],
     ['L2_HF_target_0', 0.8, 'L2/3_HC_Financing_target'],
     ['L2_target_0', 0.9, 'L2_target_0'],
@@ -231,12 +141,8 @@ C_info = [
     ['S_T_target_0', 0.9, 'S_T_target_0'],
     ['dL2_DC_in_0', 0.2, 'dL2_DC_in_0'],
     ['dL4_DC_in_0', 0.2, 'dL4_DC_in_0'],
-    ['P_DP_target', 0.7, 'P_DP_target'],
-    ['P_M_target', 0.7, 'P_M_target'],
-    ['P_I_target', 0.6, 'P_I_target'],
     ['P_RR_target_0', 1.0, 'P_RR_target_0'],
     ['L4_HF_target_0', 0.8, 'L4_HF_target_0'],
-    ['S_TF_target_0', 0.8, 'S_TF_target_0'],
     ['L2_DC_target', 0.1, 'L2_Delivery_Capacity_Target'],
     ['L4_DC_target', 0.9, 'L4_Delivery_Capacity_Target'],
 ]
@@ -296,7 +202,7 @@ def calc_y(S_values, FP_values, FN_values, B_values, C_values, P_values): # valu
     mothers = []
 
     for mother in range(0, no_mothers):
-        mothers.append(Mother(wealth[mother], education[mother], age[mother], no_children[mother], nt, B))
+        mothers.append(Mother_simplified(nt, B))
 
     # OTHER MISCELLANEOUS FACTORS
     L4_D_Capacity_Multiplier = 2
@@ -337,40 +243,33 @@ def calc_y(S_values, FP_values, FN_values, B_values, C_values, P_values): # valu
             L2_4_health_outcomes = logistic([
                 neg_HO_t[1] / neg_HO_t[0],
                 neg_HO_t[2] / neg_HO_t[0] ])
+        ['Funding_MNCH', 0.2, 'Funding_MNCH'],
+        ['Adherence_budget', 0.2, 'Adherence_budget'],
+        ['Employee_incentives', 0.2, 'Employee_incentives'],
+        ['Strong_referrals', 0.2, 'Strong_referrals'],
+        ['Training_incentives', 0.2, 'Training_incentives'],
 
-        P_A_target    = (P_M[t] * logistic([Visibility, Action_depletion, 1]) + P_I[t]) / 2
-        P_SP_target   = (P_P[t] + P_A[t] + P_D[t] * logistic([Visibility, Action_depletion, 1])) / 3
-        dP_SP_in      = (P_P[t] + P_A[t] + P_D[t])
-        dP_A_in       = (P_M[t] + P_I[t])
+        P_RR_target   = P_RR_target_0 * logistic([Funding_MNCH, 3])
+        dP_RR_in      = P_D[t]
 
-        P_RR_target   = P_RR_target_0 * logistic([Funding_MNCH, Support_Linda_Mama, Prioritization_MNCH, -Delayed_disbursement, -Lack_adherence_budget, 3])
-        dP_RR_in      = P_DP[t] + P_SP[t]
-
-        L2_HF_target  = L2_HF_target_0 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
-        L4_HF_target  = L4_HF_target_0 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
-        S_TF_target   = S_TF_target_0 * P_RR[t] * logistic([Adherence_budget, -Lack_adherence_budget, -Inadequate_financing, -Delayed_disbursement, 2])
+        L2_HF_target  = L2_HF_target_0 * P_RR[t] * logistic([Adherence_budget, 2])
+        L4_HF_target  = L4_HF_target_0 * P_RR[t] * logistic([Adherence_budget, 2])
         dL2_HF_in     = P_RR[t]  # coefficients of these three dStock_in terms add up to 1
         dL4_HF_in     = P_RR[t]
-        dS_TF_in      = P_RR[t]
         # dP_RR_out = dL2_HF_in + dL4_HF_in + dS_TF_in
         L2_target_combined_0 = L2_target_0 * L2_HF[t] # combined targets of L2_HR and L2_S =0.9*target of L2_HF
-        # L2_target_combined_0 = L2_target_0 # combined targets of L2_HR and L2_S =0.9*target of L2_HF
-        L2_HR_target  = L2_target_combined_0 * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
-        L2_S_target   = L2_target_combined_0 * logistic([-Lack_action_depletion, Pos_supply_chain, -Neg_supply_chain, -L2_demand,2])
+        L2_HR_target  = L2_target_combined_0 * logistic([Employee_incentives, Strong_referrals, Training_incentives, 3])
         dL2_HR_in     = L2_HF[t]
-        dL2_S_in      = L2_HF[t]
         # dL2_HF_out = dL2_HR_in + dL2_S_in
         L4_target_combined_0 = L4_target_0 * L4_HF[t]
         # L4_target_combined_0 = L4_target_0
-        L4_HR_target  = L4_target_combined_0 * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
-        L4_S_target   = L4_target_combined_0 * logistic([-Lack_action_depletion, Pos_supply_chain, -Neg_supply_chain, -L4_demand,2])
+        L4_HR_target  = L4_target_combined_0 * logistic([Employee_incentives, Strong_referrals, Training_incentives, 3])
         dL4_HR_in     = L4_HF[t]
-        dL4_S_in      = L4_HF[t]
         # dL4_HF_out = dL4_HR_in + dL4_S_in
-        S_FR_target  = S_FR_target_0 * S_TF[t] * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
-        S_T_target   = S_T_target_0 * S_TF[t] * logistic([Employee_incentives, -Lack_promotion, Timely_promotions, -Delay_hiring, -Frequent_transfer, -Burn_out, -Poor_management, Strong_referrals, Training_incentives, 3])
-        dS_FR_in     = S_TF[t]
-        dS_T_in      = S_TF[t]
+        S_FR_target  = S_FR_target_0 * P_RR[t] * logistic([Employee_incentives, Strong_referrals, Training_incentives, 3])
+        S_T_target   = S_T_target_0 * P_RR[t] * logistic([Employee_incentives, Strong_referrals, Training_incentives, 3])
+        dS_FR_in     = P_RR[t]
+        dS_T_in      = P_RR[t]
         # dS_TF_out  = dS_FR_in + dS_T_in
 
         # L2_DC_target  = 0.1
@@ -378,10 +277,10 @@ def calc_y(S_values, FP_values, FN_values, B_values, C_values, P_values): # valu
         dL2_DC_in     =  dL2_DC_in_0 * S_FR[t] # target < stock so need to reverse sign here
         dL4_DC_in     =  dL4_DC_in_0 * S_FR[t]
 
-        L2_Q_target  = (L2_HR_target + L2_S_target) / 2 / L2_target_combined_0 * logistic([Strong_referrals, Increase_awareness, -9*L2_demand,5])
-        L4_Q_target  = (L4_HR_target + L4_S_target) / 2 / L4_target_combined_0 * logistic([Strong_referrals, Increase_awareness_address_myths, -9/2*L4_demand,5])
-        dL2_Q_in     = (L2_HR[t] + L2_S[t])
-        dL4_Q_in     = (L4_HR[t] + L4_S[t])
+        L2_Q_target  = L2_HR_target / L2_target_combined_0 * logistic([Strong_referrals, -9*L2_demand,5])
+        L4_Q_target  = L4_HR_target / L4_target_combined_0 * logistic([Strong_referrals, -9/2*L4_demand,5])
+        dL2_Q_in     = L2_HR[t]
+        dL4_Q_in     = L4_HR[t]
 
         # Stock[t + 1] = Stock[t] * (1 + beta * (dStock_in - dStock_out)) * (Stock_target - Stock[t])
         y_t_list = []
@@ -411,13 +310,11 @@ def calc_y(S_values, FP_values, FN_values, B_values, C_values, P_values): # valu
             # mother.increase_age(quality, proximity)
             gest_age.append(mother._gest_age) # done
             health.append(float(mother._health)) # done
-            anc.append(mother._anc) # done
             delivery.append(mother._delivery)
             facility.append(mother._facility)
 
         gest_age_t[t+1] = gest_age
         health_t[t+1]   = health
-        anc_t[t+1]      = anc
         deliveries[t+1] = delivery # dictionary with integer keys, can access using [idx] for idx>0
         facilities[t+1] = facility
 
@@ -468,18 +365,18 @@ colors = {
 }
 
 FP_sliders = many_sliders(FP_label,'FP_slider',FP_0,np.zeros(len(FP_0)),
-                          np.array(FP_0)*4, num_rows=3) # add 0 to 1 slider for INCREASE ALL
+                          np.array(FP_0)*4, num_rows=3, num_cols=2, width=6) # add 0 to 1 slider for INCREASE ALL
 FP_combination_sliders = many_sliders(FP_combination_label,'FP_combination_slider',FP_combination_0,
                                       np.zeros(len(FP_combination_0)),np.ones(len(FP_combination_0)),
-                                      num_rows=1, num_cols=3, width=4)
+                                      num_rows=1, num_cols=2, width=6)
 FN_sliders = many_sliders(FN_label,'FN_slider',FN_0,np.zeros(len(FN_0)),
                           np.array(FN_0)*4, num_rows=3)
 FN_combination_sliders = many_sliders(FN_combination_label,'FN_combination_slider',FN_combination_0,
                                       np.zeros(len(FN_combination_0)),np.ones(len(FN_combination_0)),
                                       num_rows=1, num_cols=3, width=4)
-B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=5, num_cols=4, width=3)
+B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=4, num_cols=4, width=3)
 # many_sliders(labels, type used in Input() as an identifier of group of sliders, initial values, min, max, ...
-C_sliders = many_sliders(C_label,'C_slider',C_0,np.zeros(len(C_0)),np.ones(len(C_0)), num_rows=5, num_cols=4, width=3)
+C_sliders = many_sliders(C_label,'C_slider',C_0,np.zeros(len(C_0)),np.ones(len(C_0)), num_rows=3, num_cols=4, width=3)
 
 app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     dbc.Row([
@@ -502,7 +399,7 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
                 ],width=6),
                 dbc.Col([
                     html.Div([
-                        make_slider(i,S_label[i],'S_slider',S_0[i]) for i in range(6,12)
+                        make_slider(i,S_label[i],'S_slider',S_0[i]) for i in range(6,len(S_0))
                         # make_slider(i, S_label[i], 'S_slider', S_0[i]) for i in range(6, len(S_0))
             ]),
                 ],width=6),
@@ -520,59 +417,10 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
             dcc.Graph(id='plot_2c', config={'displayModeBar': False})
         ], width=3),
         dbc.Col([
-            # dbc.Col(html.H5('Initial Stock Values'), width=12),
-            dbc.Row([
-                dbc.Col([
-                    html.Div([
-                        make_slider(i, S_label[i], 'S_slider', S_0[i]) for i in range(12, 18)
-                    ]),
-                ], width=6),
-                dbc.Col([
-                    html.Div([
-                        make_slider(i, S_label[i], 'S_slider', S_0[i]) for i in range(18, len(S_0))
-                    ]),
-                ], width=6),
-            ]),
-        ], width=3),
-    ], className="pretty_container"),
-
-    # dbc.Row([
-    #     dbc.Col(html.H5('Sensitivity'),width=3),
-    #     dbc.Col([
-    #         html.Button(
-    #             F_label[11],
-    #             id={'type':'sensitivity_variable','index':11},
-    #             n_clicks=0,
-    #         ),
-    #     ],width=3),
-    #     dbc.Col([
-    #         html.Div('',id={'type':'sensitivity_output','index':11}),
-    #     ], width=3),
-    # ],  className="pretty_container"),
-
-    dbc.Row([
-        dbc.Col([
-            html.H5('Positive Combination Factors'),
-            FP_combination_sliders
-        ], width=6),
-        dbc.Col([
-            html.H5('Negative Combination Factors'),
-            FN_combination_sliders
-        ], width=6),
-    ], className="pretty_container"
-    ),
-
-    dbc.Row([
-        dbc.Col(html.H5('Positive Factors'),width=12),
-        FP_sliders,
-        ],className="pretty_container"
-    ),
-
-    dbc.Row([
-        dbc.Col(html.H5('Negative Factors'),width=12),
-        FN_sliders,
-        ],className="pretty_container"
-    ),
+            dbc.Col([html.H5('Positive Combination Factors'),FP_combination_sliders],width=12),
+            dbc.Col([html.H5('Positive Factors'),FP_sliders],width=12),
+        ], width=3)
+    ],className="pretty_container"),
 
     dbc.Row([
         dbc.Col(html.H5('Beta coefficients'),width=12),
@@ -669,7 +517,6 @@ def update_combination_slider(FP_combination_values, FN_combination_values, FP_v
     dash.dependencies.Output('plot_1a', 'figure'), # component_id='plot_1a', component_property='figure'
     dash.dependencies.Output('plot_1b', 'figure'),
     dash.dependencies.Output('plot_1c', 'figure'),
-    dash.dependencies.Output('plot_2a', 'figure'),
     dash.dependencies.Output('plot_2b', 'figure'),
     dash.dependencies.Output('plot_2c', 'figure'),
     # each row is passed to update_graph (update the dashboard) as a separate argument in the same
@@ -688,10 +535,9 @@ def update_graph(S_values,FP_values,FN_values,B_values,C_values,P_values,FP_max,
     # SLIDER VALUES GETS PASSED TO THE MODEL TO COMPUTE THE MODEL RESULTS (e.g., y_t = stocks over time)
     t_all, y_t, num_d, pos_neg_HO = calc_y(S_values,FP_values,FN_values,B_values,C_values,P_values)
     # num_deliver_home, num_deliver_2, num_deliver_4, num_deliver_total, L2_D_Capacity, L4_D_Capacity = num_d
-    k_range_1A  = range(0,6)
-    k_range_1B  = range(6,11)
-    k_range_1C  = range(11,16)
-    k_range_2A  = range(16,len(S_label))
+    k_range_1B  = range(0,4)
+    k_range_1C  = range(4,8)
+    k_range_2A  = range(8,len(S_label))
     def y_max(k_range, y=y_t, increments=5):
         if isinstance(y,list):
             max_y = 0
@@ -701,19 +547,6 @@ def update_graph(S_values,FP_values,FN_values,B_values,C_values,P_values,FP_max,
             max_y = np.amax(np.array(y)[:, k_range])
 
         return np.ceil(increments * max_y) / increments
-
-    fig_1A = {
-        'data':[{
-            'x': t_all,
-            'y': y_t[:,k],
-            'name': S_label[k]
-        } for k in k_range_1A],
-        'layout': {
-            'title':  'POLICY',
-            'xaxis':{'title':'Time (months)'},
-            'yaxis':{'range':[0,y_max(k_range_1A)], 'title':'Stocks (normalized units)'}
-        }
-    }
 
     fig_1B = {
         'data':[{
@@ -782,7 +615,7 @@ def update_graph(S_values,FP_values,FN_values,B_values,C_values,P_values,FP_max,
         }
     }
 
-    return fig_1A, fig_1B, fig_1C, fig_2A, fig_2B, fig_2C
+    return fig_1B, fig_1C, fig_2A, fig_2B, fig_2C
 
 # SENSITIVITY (NOT NEEDED)
 # delta = 0.1
