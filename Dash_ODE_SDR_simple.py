@@ -5,10 +5,23 @@ import dash_bootstrap_components as dbc # conda install -c conda-forge dash-boot
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import plotly.colors as pcolors
 import random
 
-from Mother import Mother_simplified
+from Mother import Mother_simplified, get_prob_logit_health
 from Dash_ODE_Methods import logistic, many_sliders, make_slider
+
+# CHANGES:
+#   Added probs
+#   Predisp_L2_L4: 1.0
+#   Plot colors, dash
+#   Don't use 2-k in HO array
+#   Calculate HO array at end of loop, use t instead of t+1 for quality before Mothers loop
+#   Use -9 for Mother self._gest_age, include logit_initial for delivery logit values
+#   Reorder S_info HR_Readiness, increase HR_Readiness_4/5 and L4_HF_target_0
+#   P_D[0] = logistic(logit_)
+#   beta
+#   time window
 
 random.seed(10)
 # INITIALIZE DATA FOR CLASS MOTHER
@@ -65,13 +78,13 @@ S_info = [
     ['L4_HF', 0.2, 'H_Financing_4/5'            ],
     ['L2_HF', 0.2, 'H_Financing_2/3'            ],
     ['S_FR',  0.2, 'SDR_Facility_Repurposing'   ],
+    ['L4_HR', 0.3, 'HR_Readiness_4/5'           ],
     ['L2_HR', 0.2, 'HR_Readiness_2/3'           ],
-    ['L4_HR', 0.2, 'HR_Readiness_4/5'           ],
     ['L4_DC', 0.4, 'Delivery_Capacity_4/5'      ],
     ['L2_DC', 0.9, 'Delivery_Capacity_2/3'      ],
     ['P_D',   0.6, 'Performance_Data'           ],
     ['L4_Q',  0.5, 'Quality_4/5'                ],
-    ['L2_Q',  0.1, 'Quality_2/3'                ],
+    ['L2_Q',  0.4, 'Quality_2/3'                ], #
 ]
 
 S_names, S_0, S_label, S_idx_names = set_variables(S_info, nt=nt)
@@ -82,7 +95,7 @@ FP_info = [
     ['Adherence_budget',      0.2, 'Adherence_budget'     ],
     ['Employee_incentives',   0.2, 'Employee_incentives'  ],
     ['Strong_referrals',      0.2, 'Strong_referrals'     ],
-    ['Training_incentives',   0.2, 'Training_incentives'  ], 
+    ['Training_incentives',   0.2, 'Training_incentives'  ],
 ]
 
 FP_combination_info = [
@@ -97,17 +110,18 @@ FP_combination_names, FP_combination_0, FP_combination_label, FP_combination_idx
 B_info = [
     ['BL_Capacity_factor',        20, 'BL_Capacity_Factor'                ],
     ['Initial_Negative_Predisp', 2, 'Initial_Negative_Predisp'],
-    ['Health_outcomes__Predisp', 2.4, 'Health outcome -> Predisp hospital'],
+    ['Health_outcomes__Predisp', 3.2, 'Health outcome -> Predisp hospital'], #
     ['L4_Q__Predisp',            0.5, 'L4/5 quality -> Predisp hospital'  ],
     ['Health_Predisp',           0.2, 'Health_Predisp -> Predisp hospital'],
-    ['Predisp_L2_L4',             4., 'Predisp_L2_L4'],  # 1
+    ['Predisp_L2_L4',            1.0, 'Predisp_L2_L4'],
     ['Health_const_0',           0.8, 'Health_const_0'],
-    ['Health_slope_0',           0.2, 'Health_slope_0'],
-    ['Q_Health_multiplier',             10., 'Q_Health_multiplier'],  # 6
-    ['Q_Health_L4_constant',            1.5, 'Q_Health_L4_constant'],  # 1.5
-    ['Q_Health_L4_L2_difference',        1., 'Q_Health_L4_L2_difference'],  # 1
-    ['Q_Health_L4_referral_difference', 0.5, 'Q_Health_L4_referral_difference'],  # 0.5
-    ['Q_Health_Home_negative',         10.0, 'Q_Health_Home_negative'],  # 0.5
+    ['Health_slope_0',           0.2, 'Health_slope_0'],#
+    ['Q_Health_multiplier',             4., 'Q_Health_multiplier'], #
+    ['Q_Health_L4_constant',            1.5, 'Q_Health_L4_constant'],
+    ['Q_Health_L4_L2_difference',        1., 'Q_Health_L4_L2_difference'],
+    ['Q_Health_L4_referral_difference', 0.5, 'Q_Health_L4_referral_difference'],
+    ['Q_Health_Home_negative',          2.0, 'Q_Health_Home_negative'], #
+    ['Time_delay_awareness',           18.0, 'Awareness delay (months)'], #
 ]
 
 B_names, B_0, B_label, B_idx_names = set_variables(B_info)
@@ -115,17 +129,17 @@ B_names, B_0, B_label, B_idx_names = set_variables(B_info)
 # MODEL PARAMETER INFORMATION FOR SLIDERS
 C_info = [
     ['P_D_target', 0.7, 'Data_Performance_target'],
-    ['L2_HF_target_0', 0.8, 'L2/3_HC_Financing_target'],
-    ['L2_target_0', 0.9, 'L2_target_0'],
+    ['L4_HF_target_0', 0.8, 'L4/5_HC_Financing_target'],
+    ['L2_HF_target_0', 0.6, 'L2/3_HC_Financing_target'],
     ['L4_target_0', 0.9, 'L4_target_0'],
+    ['L2_target_0', 0.9, 'L2_target_0'],
     ['S_FR_target_0', 0.7, 'S_FR_target_0'],
     ['S_T_target_0', 0.9, 'S_T_target_0'],
-    ['dL2_DC_in_0', 0.2, 'dL2_DC_in_0'],
     ['dL4_DC_in_0', 0.2, 'dL4_DC_in_0'],
+    ['dL2_DC_in_0', 0.2, 'dL2_DC_in_0'],
     ['P_RR_target_0', 1.0, 'P_RR_target_0'],
-    ['L4_HF_target_0', 0.8, 'L4_HF_target_0'],
-    ['L2_DC_target', 0.1, 'L2_Delivery_Capacity_Target'],
     ['L4_DC_target', 0.9, 'L4_Delivery_Capacity_Target'],
+    ['L2_DC_target', 0.1, 'L2_Delivery_Capacity_Target'],
 ]
 
 # SET UP OTHER INTERMEDIATE PYTHON VARIABLES FOR THE MODEL AND SLIDERS
@@ -141,6 +155,12 @@ def set_F_change(F_0):
 
 FP_original, FP_change = set_F_change(FP_0)
 
+# Parameters for ODE solver
+parameters = {
+    't_change' :  0.0,
+    'beta' : 1.0
+}
+
 y_0 = S_0
 
 def get_factors_0():
@@ -154,14 +174,14 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
     parameters['t_change'] = P_values[0] # slider value for time when the parameters change
     parameters['beta']     = P_values[1] # slider value for beta
 
-    beta  = parameters['beta'] / 10
+    beta  = parameters['beta']
     y_t   = np.zeros((nt,len(S_values)))
     t_all = np.zeros(nt)
     anc_t, health_t, gest_age_t, deliveries, facilities = {0:[0]}, {0:[0]}, {0:[0]}, {0:[0]}, {0:[0]}
     # anc_t, health_t, gest_age_t, deliveries, facilities = [[]]*nt, [[]]*nt, [[]]*nt, [[]]*nt, [[]]*nt # NG
-    num_deliver_home, num_deliver_2, num_deliver_4, num_deliver_total = \
-        np.zeros(nt), np.zeros(nt), np.zeros(nt), np.zeros(nt)
+    num_deliver = np.zeros((nt,4))
     pos_HO, neg_HO, L2_D_Capacity, L4_D_Capacity = np.zeros([nt,4]), np.zeros([nt,4]), np.ones(nt), np.ones(nt)
+    probs = np.ones((nt, 10))
 
     for i in range(len(S_values)):
         y_t[0,i] = S_values[i]
@@ -185,6 +205,12 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
     # OTHER MISCELLANEOUS FACTORS
     L4_D_Capacity_Multiplier = 2
 
+    # INITIAL PROBABILITIES
+    L2_4_health_outcomes_0 = 0  # initialize with low opinion of health outcomes
+    prob_l4_0, prob_l2_0, logit_health_l4_0, logit_health_l2_0, logit_health_l4_l2_0, logit_health_l0_0, _ = \
+        get_prob_logit_health(B, L4_Q[0], L2_Q[0], L2_4_health_outcomes_0, B['Health_const_0'])
+    P_D[0] = logistic(logit_health_l0_0) # B['Health_const_0'] - B['Q_Health_Home_negative']
+
     # LOOP OVER EVERY TIME VALUE
     for t in range(0,nt-1):
         if t > parameters['t_change']: # IF TIME IS LARGER THAN THE t_change SLIDER VALUE
@@ -207,21 +233,8 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
         # else:
         L2_D_Capacity[t] = L2_DC[t] * BL_Capacity_factor
         L4_D_Capacity[t] = L4_DC[t] * BL_Capacity_factor * L4_D_Capacity_Multiplier
-        L2_demand = logistic(num_deliver_2[t] / (L2_D_Capacity[t]))
-        L4_demand = logistic(num_deliver_4[t] / (L4_D_Capacity[t]))
-
-        neg_HO_t = sum(neg_HO[0:t+1,:])
-        if neg_HO_t[0] == 0:
-            L2_4_health_outcomes = 0
-        else:
-            L2_4_health_outcomes = logistic([
-                neg_HO_t[1] / neg_HO_t[0],
-                neg_HO_t[2] / neg_HO_t[0] ])
-        ['Funding_MNCH', 0.2, 'Funding_MNCH'],
-        ['Adherence_budget', 0.2, 'Adherence_budget'],
-        ['Employee_incentives', 0.2, 'Employee_incentives'],
-        ['Strong_referrals', 0.2, 'Strong_referrals'],
-        ['Training_incentives', 0.2, 'Training_incentives'],
+        L2_demand = logistic(num_deliver[t,1] / (L2_D_Capacity[t]))
+        L4_demand = logistic(num_deliver[t,2] / (L4_D_Capacity[t]))
 
         P_RR_target   = P_RR_target_0 * logistic([Funding_MNCH, 3])
         dP_RR_in      = P_D[t]
@@ -266,18 +279,18 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
                                              '* (' + name + '_target - ' + name + '[t]))')
 
         y_t[t+1,:] = np.array(y_t_list)
-        # quality = (L2_Q[t+1] + L4_Q[t+1]) / 2
-        l2_quality = L2_Q[t+1]
-        l4_quality = L4_Q[t+1]
-        P_D[t+1]   = L2_4_health_outcomes
-
+        # l2_quality = L2_Q[t+1]
+        # l4_quality = L4_Q[t+1]
+        # P_D[t+1]   = L2_4_health_outcomes
+        l2_quality = L2_Q[t]
+        l4_quality = L4_Q[t]
+        L2_4_health_outcomes = P_D[t]
         # neg_home   = neg_H0[t+1,2]
 
         L2_deliveries = 0
         for mother in mothers:
-            L2_net_capacity = 1 - (L2_deliveries + 1) / L2_D_Capacity[t] # add 1 to see if one more can be delivered
-            mother.increase_age(l4_quality, l2_quality, proximity, L2_4_health_outcomes,
-                                L2_net_capacity, None)  # don't need the last argument
+            L2_net_capacity = 1 - (L2_deliveries + 0) / L2_D_Capacity[t] # add 1 to see if one more can be delivered
+            mother.increase_age(l4_quality, l2_quality, L2_4_health_outcomes, L2_net_capacity)
             if mother.delivered:
                 L2_deliveries += 1
                 mother.delivered = False  # reset
@@ -294,16 +307,15 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
 
         fac_t1 = np.array(facilities[t+1])
         fac_t  = np.array(facilities[t])
-        num_deliver_home[t+1] = sum(fac_t1 == 0) - sum(fac_t == 0)
-        num_deliver_2[t+1]    = sum(fac_t1 == 1) - sum(fac_t == 1)
-        num_deliver_4[t+1]    = sum(fac_t1 == 2) - sum(fac_t == 2)
-        num_deliver_total[t+1]= num_deliver_home[t+1] + num_deliver_2[t+1] + num_deliver_4[t+1]
+        for k in range(3):
+            num_deliver[t+1,k]  = sum(fac_t1 == k) - sum(fac_t == k)
+        num_deliver[t+1,3]  = np.sum(num_deliver[t+1,:]) # initialized to zero
 
         del_t1 = np.array(deliveries[t+1])
         del_t  = np.array(deliveries[t])
-        for k in range(3):
-            pos_HO[t+1,2-k] = sum((del_t1 ==  1) & (fac_t1 == k)) - sum((del_t ==  1) & (fac_t == k))
-            neg_HO[t+1,2-k] = sum((del_t1 == -1) & (fac_t1 == k)) - sum((del_t == -1) & (fac_t == k))
+        for k in range(3): # fac_t = 0 (home), 1 (L2), 2 (L4)
+            pos_HO[t+1,k] = sum((del_t1 ==  1) & (fac_t1 == k)) - sum((del_t ==  1) & (fac_t == k))
+            neg_HO[t+1,k] = sum((del_t1 == -1) & (fac_t1 == k)) - sum((del_t == -1) & (fac_t == k))
         pos_HO[t+1,3] = sum(pos_HO[t+1,:3]) # totals
         neg_HO[t+1,3] = sum(neg_HO[t+1,:3])
 
@@ -311,22 +323,44 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
             L2_D_Capacity[t+1] = L2_DC[t+1] * BL_Capacity_factor  # need to fill in the last time value
             L4_D_Capacity[t+1] = L4_DC[t+1] * BL_Capacity_factor * L4_D_Capacity_Multiplier
 
+        # HEALTH OUTCOMES ANALYSIS
+        time_window  = int(Time_delay_awareness) # averaging window
+        if t+2 < time_window: # time_window = 2, then we have enough if t = 0
+            avg_deliveries_window = np.maximum( np.sum(num_deliver[0:t+2,:], axis=0), 1 ) / (t+1) # take average number
+            avg_deliveries_append = np.ones((time_window-t-2,4))*avg_deliveries_window
+            num_deliver_window = np.append( avg_deliveries_append,            num_deliver[0:t+2,:], axis=0 )
+            neg_HO_window      = np.append( avg_deliveries_append*(1-P_D[0]), neg_HO[0:t+2,:], axis=0 )
+        else:
+            num_deliver_window = num_deliver[(t+2-time_window):t+2,:]
+            neg_HO_window           = neg_HO[(t+2-time_window):t+2,:]
+
+        neg_HO_t     = sum(neg_HO_window) # cumulative negative health outcomes (HO)
+        deliveries_t = sum(num_deliver_window)
+        # neg_HO_t     = sum(neg_HO[0:t+1,:]) # cumulative negative health outcomes (HO)
+        # deliveries_t = np.sum(num_deliver[0:t+1,:], axis=0)
+        if np.prod(deliveries_t[:2]) == 0:
+            L2_4_health_outcomes = P_D[0] # use home value
+        else:
+            L2_4_health_outcomes = 1 - sum(neg_HO_t[1:3]) / sum(deliveries_t[1:3]) # don't include neg_HO_t[3] = total neg HO
+        L_health_outcomes = np.ones(3) * P_D[0]
+        for k in range(3):
+            if deliveries_t[k] > 0:
+                L_health_outcomes[k] = 1 - neg_HO_t[k] / deliveries_t[k]
+
+        P_D[t+1]   = L2_4_health_outcomes
+
+        prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0, _ = \
+            get_prob_logit_health(B, l4_quality, l2_quality, L2_4_health_outcomes, B['Health_const_0'])
+
+        probs[t+1,:] = np.append(
+                            np.array([prob_l4, prob_l2*(1-prob_l4), 1-prob_l4-prob_l2*(1-prob_l4),
+                                logistic(logit_health_l4), logistic(logit_health_l2),
+                                logistic(logit_health_l4_l2), logistic(logit_health_l0)]),
+                            [ L_health_outcomes[2], L_health_outcomes[1], L_health_outcomes[0] ]) # plot order
+
     return t_all, y_t, \
-           [ num_deliver_4, num_deliver_2, num_deliver_home, num_deliver_total, L4_D_Capacity, L2_D_Capacity ],\
-           [ pos_HO, neg_HO ]
-
-# FOR OTHER PLOTTING METHODS
-# gest_age_t = pd.DataFrame.from_dict(gest_age_t)
-# health_t = pd.DataFrame.from_dict(health_t)
-# anc_t = pd.DataFrame.from_dict(anc_t)
-# deliveries = pd.DataFrame.from_dict(deliveries)
-# facilities = pd.DataFrame.from_dict(facilities)
-
-# Bundle parameters for ODE solver
-parameters = {
-    't_change':0.0,
-    'beta':20.0
-}
+           [ num_deliver[:,2], num_deliver[:,1], num_deliver[:,0], num_deliver[:,3], L4_D_Capacity, L2_D_Capacity ],\
+           [ pos_HO, neg_HO ], probs
 
 # DASHBOARD
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -412,7 +446,7 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
         ], width=3),
         dbc.Col([
             html.Div([
-                make_slider(1, 'Common coefficient for rate of change', 'P_slider', parameters['beta'], 0, 100)
+                make_slider(1, 'Common coefficient for rate of change', 'P_slider', parameters['beta'], 0, 2.0)
             ]),
         ], width=3),
     ], className="pretty_container"),
@@ -470,6 +504,7 @@ def update_combination_slider(FP_combination_values, FP_values, FP_max, FP_style
     dash.dependencies.Output('plot_1a', 'figure'), # component_id='plot_1a', component_property='figure'
     dash.dependencies.Output('plot_1b', 'figure'),
     dash.dependencies.Output('plot_1c', 'figure'),
+    dash.dependencies.Output('plot_2a', 'figure'),
     dash.dependencies.Output('plot_2b', 'figure'),
     dash.dependencies.Output('plot_2c', 'figure'),
     # each row is passed to update_graph (update the dashboard) as a separate argument in the same
@@ -484,12 +519,13 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
     # S_values_global = np.array(S_values) # used for sensitivities
     # F_values_global = np.array(F_values)
     # SLIDER VALUES GETS PASSED TO THE MODEL TO COMPUTE THE MODEL RESULTS (e.g., y_t = stocks over time)
-    t_all, y_t, num_d, pos_neg_HO = calc_y(S_values,FP_values,B_values,C_values,P_values)
+    t_all, y_t, num_d, pos_neg_HO, probs = calc_y(S_values,FP_values,B_values,C_values,P_values)
     # num_deliver_home, num_deliver_2, num_deliver_4, num_deliver_total, L2_D_Capacity, L4_D_Capacity = num_d
+
     k_range_1B  = range(0,4)
     k_range_1C  = range(4,8)
     k_range_2A  = range(8,len(S_label))
-    def y_max(k_range, y=y_t, increments=5):
+    def y_max_t(k_range, y, increments=5):
         if isinstance(y,list):
             max_y = 0
             for k in k_range:
@@ -499,37 +535,71 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
 
         return np.ceil(increments * max_y) / increments
 
+    colors = pcolors.qualitative.D3
+
+    # PROBABILITIES
+    labels     = ['Deliver at 4/5','Deliver at  2/3','Deliver at Home','Healthy at 4/5','Healthy at 2/3',
+                  'Healthy at 2/3 -> 4/5','Health Home',
+                  'Deliver at 4/5 (actual)','Deliver at 2/3 (actual)','Deliver at Home (actual)']
+    line_color = [0, 1, 2, 0, 1, 4, 2, 0, 1, 2]
+    line_dash  = ['none', 'none', 'none', 'dash', 'dash', 'dash', 'dash', 'dot', 'dot', 'dot' ]
+    fig_1A = {
+        'data':[{
+            'x': t_all[1:],
+            'y': probs[1:,k],
+            'name': labels[k],
+            'line' : {'color' : colors[line_color[k]], 'dash' : line_dash[k]},
+        } for k in range(len(labels))], # don't need total, so just the first three
+        'layout': {
+            'title':  'Probabilities over time',
+            'xaxis':{'range':[0,nt], 'title':'Time (months)'},
+            'yaxis':{'title':'Probabilities'}
+        }
+    }
+
+    # QUALITY
+    line_color = [4, 0, 1, 3]
+    line_dash  = ['dash', 'none', 'none', 'dash']
     fig_1B = {
         'data':[{
             'x': t_all,
             'y': y_t[:,k],
-            'name': S_label[k]
+            'name': S_label[k],
+            'line': {'color': colors[line_color[k]], 'dash': line_dash[k]},
         } for k in k_range_1B],
         'layout': {
             'title':  'RESOURCES',
             'xaxis':{'title':'Time (months)'},
-            'yaxis':{'range':[0,y_max(k_range_1B)], 'title':'Stocks (normalized units)'}
+            'yaxis':{'range':[0,y_max_t(k_range_1B, y_t)], 'title':'Stocks (normalized units)'}
         }
     }
 
+    # SERVICE READINESS
+    line_color = [0, 1, 0, 1]
+    line_dash  = ['none', 'none', 'dash', 'dash']
     fig_1C = {
         'data':[{
             'x': t_all,
             'y': y_t[:,k],
-            'name': S_label[k]
+            'name': S_label[k],
+            'line': {'color': colors[line_color[k-max(k_range_1B)-1]], 'dash': line_dash[k-max(k_range_1B)-1]},
         } for k in k_range_1C],
         'layout': {
             'title':  'SERVICE READINESS',
             'xaxis':{'title':'Time (months)'},
-            'yaxis':{'range':[0,y_max(k_range_1C)], 'title':'Stocks (normalized units)'}
+            'yaxis':{'range':[0,y_max_t(k_range_1C, y_t)], 'title':'Stocks (normalized units)'}
         }
     }
 
+    # QUALITY
+    line_color = [4, 0, 1]
+    line_dash  = ['dash', 'none', 'none']
     fig_2A = {
         'data':[{
             'x': t_all,
             'y': y_t[:,k],
-            'name': S_label[k]
+            'name': S_label[k],
+            'line': {'color': colors[line_color[k-max(k_range_1C)-1]], 'dash': line_dash[k-max(k_range_1C)-1]},
         } for k in k_range_2A],
         'layout': {
             'title':  'QUALITY',
@@ -538,35 +608,43 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
         }
     }
 
-    num_deliveries_labels = ['Level 4/5','Level 2/3','Home','Total','Capacity 4/5','Capacity 2/3'] # total is unused
+    # DELIVERIES
+    labels     = ['Level 4/5','Level 2/3','Home','Total','Capacity 4/5','Capacity 2/3'] # total is unused
+    line_color = [0, 1, 2, 5, 0, 1]
+    line_dash  = ['none', 'none', 'none', 'dash', 'dash', 'dash' ]
     fig_2B = {
         'data':[{
-            'x': t_all,
-            'y': num_d[k],
-            'name': num_deliveries_labels[k]
+            'x': t_all[1:],
+            'y': num_d[k][1:],
+            'name': labels[k],
+            'line': {'color': colors[line_color[k]], 'dash': line_dash[k]},
         } for k in [0,1,2,4,5]], # don't need total, so just the first three
         'layout': {
             'title':  'Deliveries over time',
-            'xaxis':{'title':'Time (months)'},
-            'yaxis':{'range':[0,y_max([0,1,2,4,5],num_d)], 'title':'Deliveries'}
+            'xaxis':{'range':[0,nt], 'title':'Time (months)'},
+            'yaxis':{'range':[0,y_max_t([0,1,2,4,5], num_d)], 'title':'Deliveries'}
         }
     }
 
-    HO_labels = ['Home delivery','L2', 'L4', 'Total']
+    # QUALITY
+    labels     = ['Home','L2', 'L4', 'Total']
+    line_color = [2, 1, 0, 4]
+    line_dash  = ['none', 'none', 'none', 'dash']
     fig_2C = {
         'data':[{
-            'x': t_all,
-            'y': pos_neg_HO[1][:,k],
-            'name': HO_labels[k]
+            'x': t_all[1:],
+            'y': pos_neg_HO[1][1:,k],
+            'name': labels[k],
+            'line': {'color': colors[line_color[k]], 'dash': line_dash[k]},
         } for k in [2,1,0,3]],
         'layout': {
             'title':  'Negative birth outcomes over time',
-            'xaxis':{'title':'Time (months)'},
-            'yaxis':{'range':[0,y_max([2,1,0,3],pos_neg_HO[1])], 'title':'Number of dyads'}
+            'xaxis':{'range':[0,nt], 'title':'Time (months)'},
+            'yaxis':{'range':[0,y_max_t([2,1,0,3], pos_neg_HO[1])], 'title':'Number of dyads'}
         }
     }
 
-    return fig_1B, fig_1C, fig_2A, fig_2B, fig_2C
+    return fig_1A, fig_1B, fig_1C, fig_2A, fig_2B, fig_2C
 
 # CAN LEAVE IN FOR PYTHONEVERYWHERE
 if __name__ == '__main__':

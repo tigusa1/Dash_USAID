@@ -63,7 +63,7 @@ def make_slider(i, slider_label, slider_type, default_value, min_value=0, max_va
         html.Button(slider_label,
                     id={'type': slider_type + '_button', 'index': i},
                     n_clicks=0,
-                    style={'color': '#000'},  # red : f50
+                    style={'color': '#000', 'fontSize': 16, 'textTransform' : 'none'},  # red : f50
                     ),
         dcc.Slider(
             id={'type': slider_type, 'index': i},
