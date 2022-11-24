@@ -75,8 +75,8 @@ nt = 12*5 # number of months
 # Names, initial values
 S_info = [
     ['P_RR',  0.2, 'Resources_RMNCH'            ],
-    ['L4_HF', 0.2, 'H_Financing_4/5'            ],
-    ['L2_HF', 0.2, 'H_Financing_2/3'            ],
+    ['L4_HF', 0.2, 'HC_Financing_4/5'           ], #
+    ['L2_HF', 0.2, 'HC_Financing_2/3'           ], #
     ['S_FR',  0.2, 'SDR_Facility_Repurposing'   ],
     ['L4_HR', 0.3, 'HR_Readiness_4/5'           ],
     ['L2_HR', 0.2, 'HR_Readiness_2/3'           ],
@@ -109,37 +109,36 @@ FP_combination_names, FP_combination_0, FP_combination_label, FP_combination_idx
 
 B_info = [
     ['BL_Capacity_factor',        20, 'BL_Capacity_Factor'                ],
-    ['Initial_Negative_Predisp', 2, 'Initial_Negative_Predisp'],
+    ['Initial_Negative_Predisp',   2, 'Initial_Negative_Predisp'],
     ['Health_outcomes__Predisp', 3.2, 'Health outcome -> Predisp hospital'], #
     ['L4_Q__Predisp',            0.5, 'L4/5 quality -> Predisp hospital'  ],
-    ['Health_Predisp',           0.2, 'Health_Predisp -> Predisp hospital'],
-    ['Predisp_L2_L4',            2.0, 'Predisp_L2_L4'], #
-    ['Health_const_0',           0.8, 'Health_const_0'],
-    ['Health_slope_0',           0.2, 'Health_slope_0'],#
-    ['Q_Health_multiplier',             4., 'Q_Health_multiplier'], #
-    ['Q_Health_L4_constant',            1.5, 'Q_Health_L4_constant'],
-    ['Q_Health_L4_L2_difference',        1., 'Q_Health_L4_L2_difference'],
-    ['Q_Health_L4_referral_difference', 0.5, 'Q_Health_L4_referral_difference'],
-    ['Q_Health_Home_negative',          3.0, 'Q_Health_Home_negative'], #
-    ['Time_delay_awareness',           24.0, 'Awareness delay (months)'], #
+    ['Predisp_L2_L4',            2.0, 'Predisp L2'], #
+    ['Health_const_0',           0.8, 'Initial Health'],
+    ['Health_slope_0',           0.2, 'Variability Initial Health'],#
+    ['Q_Health_multiplier',             4., 'Q Health Effect'], #
+    ['Q_Health_L4_constant',            1.5, 'L4 Health Effect'],
+    ['Q_Health_L4_L2_difference',        1., 'Difference L4-L2 Health Effect'],
+    ['Q_Health_L4_referral_difference', 0.5, 'L2 -> L4 Referral Health Effect'],
+    ['Q_Health_Home_negative',          3.0, 'Home Delivery Health Effect'], #
+    ['Time_delay_awareness',           24.0, 'Awareness Delay (months)'], #
 ]
 
 B_names, B_0, B_label, B_idx_names = set_variables(B_info)
 
 # MODEL PARAMETER INFORMATION FOR SLIDERS
 C_info = [
-    ['P_D_target', 0.7, 'Data_Performance_target'],
-    ['L4_HF_target_0', 0.8, 'L4/5_HC_Financing_target'],
-    ['L2_HF_target_0', 0.6, 'L2/3_HC_Financing_target'],
-    ['L4_target_0', 0.9, 'L4_target_0'],
-    ['L2_target_0', 0.9, 'L2_target_0'],
-    ['S_FR_target_0', 0.7, 'S_FR_target_0'],
-    ['S_T_target_0', 0.9, 'S_T_target_0'],
-    ['dL4_DC_in_0', 0.2, 'dL4_DC_in_0'],
-    ['dL2_DC_in_0', 0.2, 'dL2_DC_in_0'],
-    ['P_RR_target_0', 1.0, 'P_RR_target_0'],
-    ['L4_DC_target', 0.9, 'L4_Delivery_Capacity_Target'],
-    ['L2_DC_target', 0.1, 'L2_Delivery_Capacity_Target'],
+    ['P_D_target',     0.7, 'Data Performance target'],
+    ['L4_HF_target_0', 0.8, 'L4/5 HC Financing target'],
+    ['L2_HF_target_0', 0.6, 'L2/3 HC Financing target'],
+    ['L4_target_0',    0.9, 'L4 target'],
+    ['L2_target_0',    0.9, 'L2 target'],
+    ['S_FR_target_0',  0.7, 'SDR FR target'],
+    ['S_T_target_0',   0.9, 'SDR T target'],
+    ['dL4_DC_in_0',    0.2, 'L4 Rate of Capacity Increase'],
+    ['dL2_DC_in_0',    0.2, 'L2 Rate of Capacity Decrease'],
+    ['P_RR_target_0',  1.0, 'Resources RMNCH target'],
+    ['L4_DC_target',   0.9, 'L4 Delivery Capacity Target'],
+    ['L2_DC_target',   0.1, 'L2 Delivery Capacity Target'],
 ]
 
 # SET UP OTHER INTERMEDIATE PYTHON VARIABLES FOR THE MODEL AND SLIDERS
@@ -383,6 +382,8 @@ FP_combination_sliders = many_sliders(FP_combination_label,'FP_combination_slide
 B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=4, num_cols=4, width=3)
 # many_sliders(labels, type used in Input() as an identifier of group of sliders, initial values, min, max, ...
 C_sliders = many_sliders(C_label,'C_slider',C_0,np.zeros(len(C_0)),np.ones(len(C_0)), num_rows=3, num_cols=4, width=3)
+fcolor = '#316395'  # font
+fsize = 36  # font size
 
 app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
     dbc.Row([
@@ -396,7 +397,7 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
             dcc.Graph(id='plot_1c',config={'displayModeBar': False})
         ],width=3),
         dbc.Col([
-            dbc.Col(html.H5('Initial Stock Values'),width=12),
+            dbc.Col(html.H5('Initial Stock Values', style={'fontSize':fsize, 'color':fcolor}),width=12),
             dbc.Row([
                 dbc.Col([
                     html.Div([
@@ -423,25 +424,25 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
             dcc.Graph(id='plot_2c', config={'displayModeBar': False})
         ], width=3),
         dbc.Col([
-            dbc.Col([html.H5('Positive Combination Factors'),FP_combination_sliders],width=12),
-            dbc.Col([html.H5('Positive Factors'),FP_sliders],width=12),
+            dbc.Col([html.H5('Positive Combination Factors', style={'fontSize':fsize, 'color':fcolor}),FP_combination_sliders],width=12),
+            dbc.Col([html.H5('Positive Factors', style={'fontSize':fsize, 'color':fcolor}),FP_sliders],width=12),
         ], width=3)
     ],className="pretty_container"),
 
     dbc.Row([
-        dbc.Col(html.H5('Beta coefficients'),width=12),
+        dbc.Col(html.H5('Beta coefficients', style={'fontSize':fsize, 'color':fcolor}),width=12),
         B_sliders,
         ],className="pretty_container"
     ),
 
     dbc.Row([
-        dbc.Col(html.H5('Constant coefficients for the model'),width=12),
+        dbc.Col(html.H5('Constant coefficients for the model', style={'fontSize':fsize, 'color':fcolor}),width=12),
         C_sliders,
         ],className="pretty_container"
     ),
 
     dbc.Row([
-        dbc.Col(html.H5('Meta parameters'), width=3),
+        dbc.Col(html.H5('Meta parameters', style={'fontSize':fsize, 'color':fcolor}), width=3),
         dbc.Col([
             html.Div([
                 make_slider(0, 'Time when factor changes will take place', 'P_slider', parameters['t_change'], 0, nt)
@@ -539,6 +540,8 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
         return np.ceil(increments * max_y) / increments
 
     colors = pcolors.qualitative.D3
+    fcolor = '#316395' # font
+    fsize  = 24 # font size
 
     # PROBABILITIES
     labels     = ['Deliver at 4/5','Deliver at  2/3','Deliver at Home','Healthy at 4/5','Healthy at 2/3',
@@ -554,7 +557,7 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
             'line' : {'color' : colors[line_color[k]], 'dash' : line_dash[k]},
         } for k in range(len(labels))], # don't need total, so just the first three
         'layout': {
-            'title':  'Probabilities over time',
+            'title': {'text' : 'Probabilities over time', 'font' : {'color' : fcolor, 'size' : fsize}},
             'xaxis':{'range':[0,nt], 'title':'Time (months)'},
             'yaxis':{'title':'Probabilities'}
         }
@@ -571,7 +574,7 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
             'line': {'color': colors[line_color[k]], 'dash': line_dash[k]},
         } for k in k_range_1B],
         'layout': {
-            'title':  'RESOURCES',
+            'title': {'text' : 'Resources', 'font' : {'color' : fcolor, 'size' : fsize}},
             'xaxis':{'title':'Time (months)'},
             'yaxis':{'range':[0,y_max_t(k_range_1B, y_t)], 'title':'Stocks (normalized units)'}
         }
@@ -588,9 +591,9 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
             'line': {'color': colors[line_color[k-max(k_range_1B)-1]], 'dash': line_dash[k-max(k_range_1B)-1]},
         } for k in k_range_1C],
         'layout': {
-            'title':  'SERVICE READINESS',
+            'title': {'text' : 'Service Readiness', 'font' : {'color' : fcolor, 'size' : fsize}},
             'xaxis':{'title':'Time (months)'},
-            'yaxis':{'range':[0,y_max_t(k_range_1C, y_t)], 'title':'Stocks (normalized units)'}
+            'yaxis':{'range':[0,y_max_t(k_range_1C, y_t)], 'title':'Stocks (normalized units)'},
         }
     }
 
@@ -605,7 +608,7 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
             'line': {'color': colors[line_color[k-max(k_range_1C)-1]], 'dash': line_dash[k-max(k_range_1C)-1]},
         } for k in k_range_2A],
         'layout': {
-            'title':  'QUALITY',
+            'title': {'text' : 'Quality', 'font' : {'color' : fcolor, 'size' : fsize}},
             'xaxis':{'title':'Time (months)'},
             'yaxis':{'range':[0,1], 'title':'Stocks (normalized units)'}
         }
@@ -623,9 +626,9 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
             'line': {'color': colors[line_color[k]], 'dash': line_dash[k]},
         } for k in [0,1,2,4,5]], # don't need total, so just the first three
         'layout': {
-            'title':  'Deliveries over time',
-            'xaxis':{'range':[0,nt], 'title':'Time (months)'},
-            'yaxis':{'range':[0,y_max_t([0,1,2,4,5], num_d)], 'title':'Deliveries'}
+            'title': {'text' : 'Deliveries over time', 'font' : {'color' : fcolor, 'size' : fsize}},
+            'xaxis': {'range':[0,nt], 'title':'Time (months)'},
+            'yaxis': {'range':[0,y_max_t([0,1,2,4,5], num_d)], 'title':'Deliveries'}
         }
     }
 
@@ -641,7 +644,7 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
             'line': {'color': colors[line_color[k]], 'dash': line_dash[k]},
         } for k in [2,1,0,3]],
         'layout': {
-            'title':  'Negative birth outcomes over time',
+            'title': {'text' : 'Negative birth outcomes', 'font' : {'color' : fcolor, 'size' : fsize}},
             'xaxis':{'range':[0,nt], 'title':'Time (months)'},
             'yaxis':{'range':[0,y_max_t([2,1,0,3], pos_neg_HO[1])], 'title':'Number of dyads'}
         }
