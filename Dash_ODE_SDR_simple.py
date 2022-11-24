@@ -65,7 +65,7 @@ def set_variables(X_info, name_append = '', nt=0):
 # APP SETUP
 
 # Make time array for solution
-nt = 48 # number of months
+nt = 12*5 # number of months
 # RR  Resources for RMNCH
 # R2  Healthcare financing (Resources for 2/3 facilities)
 # R4  Healthcare financing (Resources for 4/5 facilities)
@@ -113,15 +113,15 @@ B_info = [
     ['Health_outcomes__Predisp', 3.2, 'Health outcome -> Predisp hospital'], #
     ['L4_Q__Predisp',            0.5, 'L4/5 quality -> Predisp hospital'  ],
     ['Health_Predisp',           0.2, 'Health_Predisp -> Predisp hospital'],
-    ['Predisp_L2_L4',            1.0, 'Predisp_L2_L4'],
+    ['Predisp_L2_L4',            2.0, 'Predisp_L2_L4'], #
     ['Health_const_0',           0.8, 'Health_const_0'],
     ['Health_slope_0',           0.2, 'Health_slope_0'],#
     ['Q_Health_multiplier',             4., 'Q_Health_multiplier'], #
     ['Q_Health_L4_constant',            1.5, 'Q_Health_L4_constant'],
     ['Q_Health_L4_L2_difference',        1., 'Q_Health_L4_L2_difference'],
     ['Q_Health_L4_referral_difference', 0.5, 'Q_Health_L4_referral_difference'],
-    ['Q_Health_Home_negative',          2.0, 'Q_Health_Home_negative'], #
-    ['Time_delay_awareness',           18.0, 'Awareness delay (months)'], #
+    ['Q_Health_Home_negative',          3.0, 'Q_Health_Home_negative'], #
+    ['Time_delay_awareness',           24.0, 'Awareness delay (months)'], #
 ]
 
 B_names, B_0, B_label, B_idx_names = set_variables(B_info)
@@ -326,16 +326,19 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
         # HEALTH OUTCOMES ANALYSIS
         time_window  = int(Time_delay_awareness) # averaging window
         if t+2 < time_window: # time_window = 2, then we have enough if t = 0
-            avg_deliveries_window = np.maximum( np.sum(num_deliver[0:t+2,:], axis=0), 1 ) / (t+1) # take average number
+            avg_deliveries_window =             np.sum(num_deliver[0:t+2,:], axis=0)      / (t+1) # take average number
+#           avg_deliveries_window = np.maximum( np.sum(num_deliver[0:t+2,:], axis=0), 1 ) / (t+1) # take average number
             avg_deliveries_append = np.ones((time_window-t-2,4))*avg_deliveries_window
-            num_deliver_window = np.append( avg_deliveries_append,            num_deliver[0:t+2,:], axis=0 )
+            num_deliver_window = np.append( avg_deliveries_append,       num_deliver[0:t+2,:], axis=0 )
             neg_HO_window      = np.append( avg_deliveries_append*(1-P_D[0]), neg_HO[0:t+2,:], axis=0 )
         else:
             num_deliver_window = num_deliver[(t+2-time_window):t+2,:]
             neg_HO_window           = neg_HO[(t+2-time_window):t+2,:]
 
-        neg_HO_t     = sum(neg_HO_window) # cumulative negative health outcomes (HO)
-        deliveries_t = sum(num_deliver_window)
+        linearly_decreasing_weights = np.array(range(time_window)).reshape((time_window,1))
+
+        neg_HO_t     = sum(neg_HO_window      * linearly_decreasing_weights) # cumulative negative health outcomes (HO)
+        deliveries_t = sum(num_deliver_window * linearly_decreasing_weights)
         # neg_HO_t     = sum(neg_HO[0:t+1,:]) # cumulative negative health outcomes (HO)
         # deliveries_t = np.sum(num_deliver[0:t+1,:], axis=0)
         if np.prod(deliveries_t[:2]) == 0:
