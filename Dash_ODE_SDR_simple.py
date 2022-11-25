@@ -65,7 +65,7 @@ def set_variables(X_info, name_append = '', nt=0):
 # APP SETUP
 
 # Make time array for solution
-nt = 12*5 # number of months
+nt = 12*5*2 # number of months
 # RR  Resources for RMNCH
 # R2  Healthcare financing (Resources for 2/3 facilities)
 # R4  Healthcare financing (Resources for 4/5 facilities)
@@ -165,6 +165,32 @@ y_0 = S_0
 def get_factors_0():
     return FP_0
 
+def window_average(x, t, window_duration, x0=1, x1=None, linear_weights=True):
+    if t < 1:
+        raise Exception("window_average t < 1")
+
+    if not isinstance(x1, np.ndarray):  # use for averaging
+        x1 = x
+
+    if len(np.shape(x)) == 1:
+        x  = np.reshape(x, (len(x), 1))
+    if len(np.shape(x1)) == 1:
+        x1 = np.reshape(x1,(len(x1),1))
+
+    window_duration = int(window_duration)
+    if t < window_duration:
+        avg_value = np.sum(x1[0:t, :] * x0, axis=0) / t
+        x_append = np.ones((window_duration - t, np.shape(x)[1])) * avg_value
+        x_window = np.append(x_append, x[0:t, :], axis=0)
+    else:
+        x_window = x[(t - window_duration):t, :]
+
+    if linear_weights:
+        linearly_decreasing_weights = np.array(range(window_duration)).reshape((window_duration, 1))
+        x_window = x_window * linearly_decreasing_weights / np.mean(linearly_decreasing_weights)
+
+    return np.mean(x_window, axis=0)
+
 def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the sliders
     # P_values = parameter values
     for i in range(len(FP_values)): # for each F-slider
@@ -178,7 +204,7 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
     t_all = np.zeros(nt)
     anc_t, health_t, gest_age_t, deliveries, facilities = {0:[0]}, {0:[0]}, {0:[0]}, {0:[0]}, {0:[0]}
     # anc_t, health_t, gest_age_t, deliveries, facilities = [[]]*nt, [[]]*nt, [[]]*nt, [[]]*nt, [[]]*nt # NG
-    num_deliver = np.zeros((nt,4))
+    num_deliver, num_deliver_avg, neg_HO_avg = np.zeros((nt,4)), np.zeros((nt,4)), np.zeros((nt,4))
     pos_HO, neg_HO, L2_D_Capacity, L4_D_Capacity = np.zeros([nt,4]), np.zeros([nt,4]), np.ones(nt), np.ones(nt)
     probs = np.ones((nt, 10))
 
@@ -226,10 +252,6 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
             globals()[d_name + '_in'] = 0.0
             globals()[d_name + '_out'] = 0.0
 
-        # if t == 0:
-        #     L2_demand = 0
-        #     L4_demand = 0
-        # else:
         L2_D_Capacity[t] = L2_DC[t] * BL_Capacity_factor
         L4_D_Capacity[t] = L4_DC[t] * BL_Capacity_factor * L4_D_Capacity_Multiplier
         L2_demand = logistic(num_deliver[t,1] / (L2_D_Capacity[t]))
@@ -242,24 +264,17 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
         L4_HF_target  = L4_HF_target_0 * P_RR[t] * logistic([Adherence_budget, 2])
         dL2_HF_in     = P_RR[t]  # coefficients of these three dStock_in terms add up to 1
         dL4_HF_in     = P_RR[t]
-        # dP_RR_out = dL2_HF_in + dL4_HF_in + dS_TF_in
         L2_target_combined_0 = L2_target_0 * L2_HF[t] # combined targets of L2_HR and L2_S =0.9*target of L2_HF
         L2_HR_target  = L2_target_combined_0 * logistic([Employee_incentives, Strong_referrals, Training_incentives, 3])
         dL2_HR_in     = L2_HF[t]
-        # dL2_HF_out = dL2_HR_in + dL2_S_in
         L4_target_combined_0 = L4_target_0 * L4_HF[t]
-        # L4_target_combined_0 = L4_target_0
         L4_HR_target  = L4_target_combined_0 * logistic([Employee_incentives, Strong_referrals, Training_incentives, 3])
         dL4_HR_in     = L4_HF[t]
-        # dL4_HF_out = dL4_HR_in + dL4_S_in
         S_FR_target  = S_FR_target_0 * P_RR[t] * logistic([Employee_incentives, Strong_referrals, Training_incentives, 3])
         S_T_target   = S_T_target_0 * P_RR[t] * logistic([Employee_incentives, Strong_referrals, Training_incentives, 3])
         dS_FR_in     = P_RR[t]
         dS_T_in      = P_RR[t]
-        # dS_TF_out  = dS_FR_in + dS_T_in
 
-        # L2_DC_target  = 0.1
-        # L4_DC_target  = 0.9
         dL2_DC_in     =  dL2_DC_in_0 * S_FR[t] # target < stock so need to reverse sign here
         dL4_DC_in     =  dL4_DC_in_0 * S_FR[t]
 
@@ -278,18 +293,17 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
                                              '* (' + name + '_target - ' + name + '[t]))')
 
         y_t[t+1,:] = np.array(y_t_list)
-        # l2_quality = L2_Q[t+1]
-        # l4_quality = L4_Q[t+1]
-        # P_D[t+1]   = L2_4_health_outcomes
-        l2_quality = L2_Q[t]
-        l4_quality = L4_Q[t]
-        L2_4_health_outcomes = P_D[t]
-        # neg_home   = neg_H0[t+1,2]
+
+        time_window  = int(Time_delay_awareness) # averaging window
+        # window_average(x, t, window_duration, x0=1, x1=None, linear_weights=True)
+        l2_quality_avg = window_average(L2_Q, t+1, time_window, linear_weights=True)
+        l4_quality_avg = window_average(L4_Q, t+1, time_window, linear_weights=True)
+        L2_4_health_outcomes_avg = window_average(P_D, t+1, time_window, linear_weights=True)
 
         L2_deliveries = 0
         for mother in mothers:
             L2_net_capacity = 1 - (L2_deliveries + 0) / L2_D_Capacity[t] # add 1 to see if one more can be delivered
-            mother.increase_age(l4_quality, l2_quality, L2_4_health_outcomes, L2_net_capacity)
+            mother.increase_age(l4_quality_avg, l2_quality_avg, L2_4_health_outcomes_avg, L2_net_capacity)
             if mother.delivered:
                 L2_deliveries += 1
                 mother.delivered = False  # reset
@@ -324,22 +338,15 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
 
         # HEALTH OUTCOMES ANALYSIS
         time_window  = int(Time_delay_awareness) # averaging window
-        if t+2 < time_window: # time_window = 2, then we have enough if t = 0
-            avg_deliveries_window =             np.sum(num_deliver[0:t+2,:], axis=0)      / (t+1) # take average number
-#           avg_deliveries_window = np.maximum( np.sum(num_deliver[0:t+2,:], axis=0), 1 ) / (t+1) # take average number
-            avg_deliveries_append = np.ones((time_window-t-2,4))*avg_deliveries_window
-            num_deliver_window = np.append( avg_deliveries_append,       num_deliver[0:t+2,:], axis=0 )
-            neg_HO_window      = np.append( avg_deliveries_append*(1-P_D[0]), neg_HO[0:t+2,:], axis=0 )
-        else:
-            num_deliver_window = num_deliver[(t+2-time_window):t+2,:]
-            neg_HO_window           = neg_HO[(t+2-time_window):t+2,:]
+        # window_average(x, t, window_duration, x0=1, x1=None, linear_weights=True)
+        neg_HO_t     = window_average(neg_HO,                t+2, time_window, linear_weights=True, x1=num_deliver, x0=(1-P_D[0]))
+        deliveries_t = window_average(num_deliver,           t+2, time_window, linear_weights=True)
+        num_deliver_avg[t+1,:] = window_average(num_deliver, t+2, time_window, linear_weights=True)
+        neg_HO_avg[t+1,:] = neg_HO_t
 
-        linearly_decreasing_weights = np.array(range(time_window)).reshape((time_window,1))
+        l2_quality = L2_Q[t+1]
+        l4_quality = L4_Q[t+1]
 
-        neg_HO_t     = sum(neg_HO_window      * linearly_decreasing_weights) # cumulative negative health outcomes (HO)
-        deliveries_t = sum(num_deliver_window * linearly_decreasing_weights)
-        # neg_HO_t     = sum(neg_HO[0:t+1,:]) # cumulative negative health outcomes (HO)
-        # deliveries_t = np.sum(num_deliver[0:t+1,:], axis=0)
         if np.prod(deliveries_t[:2]) == 0:
             L2_4_health_outcomes = P_D[0] # use home value
         else:
@@ -361,8 +368,8 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
                             [ L_health_outcomes[2], L_health_outcomes[1], L_health_outcomes[0] ]) # plot order
 
     return t_all, y_t, \
-           [ num_deliver[:,2], num_deliver[:,1], num_deliver[:,0], num_deliver[:,3], L4_D_Capacity, L2_D_Capacity ],\
-           [ pos_HO, neg_HO ], probs
+           [ num_deliver_avg[:,2], num_deliver_avg[:,1], num_deliver_avg[:,0], num_deliver_avg[:,3], L4_D_Capacity, L2_D_Capacity ],\
+           [ pos_HO, neg_HO_avg ], probs # pos_HO not used
 
 # DASHBOARD
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
