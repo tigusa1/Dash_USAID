@@ -27,21 +27,22 @@ random.seed(10)
 # INITIALIZE DATA FOR CLASS MOTHER
 # read file of data with columns 1-4 [Mother]: wealth, education, age, number of children
 # simulate for health, gestational age, predisposition for ANC
-df = pd.read_excel("SDR_Mother.xlsx")
-wealth      = df['Wealth'].to_numpy()
-education   = df['Education'].to_numpy()
-age         = df['Age'].to_numpy()
-no_children = df['No_children'].to_numpy()
+df = pd.read_excel("SDR_Mother_DHS.xlsx")
+df['new_lat_long'] = list(zip(df['new_lat'], df['new_long']))
+# wealth      = df['Wealth'].to_numpy()
+# education   = df['Education'].to_numpy()
+# age         = df['Age'].to_numpy()
+# no_children = df['No_children'].to_numpy()
 
-n_repeat = 1 # n_repeat greater than 1 makes the code run slow, it is better to repeat in the Excel file
-for i in range(n_repeat):
-    wealth = wealth.repeat(n_repeat)
-    education = education.repeat(n_repeat)
-    age = age.repeat(n_repeat)
-    no_children = no_children.repeat(n_repeat)
-    wealth = wealth.repeat(n_repeat)
+# n_repeat = 1 # n_repeat greater than 1 makes the code run slow, it is better to repeat in the Excel file
+# for i in range(n_repeat):
+#     wealth = wealth.repeat(n_repeat)
+#     education = education.repeat(n_repeat)
+#     age = age.repeat(n_repeat)
+#     no_children = no_children.repeat(n_repeat)
+#     wealth = wealth.repeat(n_repeat)
 
-no_mothers  = len(age)
+no_mothers  = len(df)
 
 # quality   = 0.7
 
@@ -225,7 +226,7 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
     mothers = []
 
     for mother in range(0, no_mothers):
-        mothers.append(Mother_simplified(nt, B))
+        mothers.append(Mother_simplified(nt, B, mother, df))
 
     # OTHER MISCELLANEOUS FACTORS
     L4_D_Capacity_Multiplier = 2
@@ -302,8 +303,9 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
 
         L2_deliveries = 0
         for mother in mothers:
+
             L2_net_capacity = 1 - (L2_deliveries + 0) / L2_D_Capacity[t] # add 1 to see if one more can be delivered
-            mother.increase_age(l4_quality_avg, l2_quality_avg, L2_4_health_outcomes_avg, L2_net_capacity)
+            mother.increase_age(l4_quality_avg, l2_quality_avg, L2_4_health_outcomes_avg, L2_net_capacity, mothers, t)
             if mother.delivered:
                 L2_deliveries += 1
                 mother.delivered = False  # reset
