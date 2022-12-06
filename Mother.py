@@ -14,9 +14,15 @@ class Mother_simplified:
         self._facility = None
         self.delivered = False  # needed to count the number of deliveries per month
 
-        self.flag_network = False
+        self.flag_network = True
 
         if self.flag_network:
+            self.network_distance = 0.05
+            self.network_influence = 0.5
+            self.CHV_weight = 0.3
+            self.Rec_weight = 0.2
+            self.CHV_likelihood = 0.0895
+
             self._network = []
 
             self._id = unique_id
@@ -24,12 +30,13 @@ class Mother_simplified:
             self._location = df['new_lat_long'][unique_id]
 
             predisp = np.int(np.random.randint(0,3,1)) # a random integer from 0 to 2
-            self._l4 = [int(predisp == 2)]
-            self._l2 = [int(predisp == 1)]
-            self._home = [int(predisp == 0)]
+            rands = np.random.uniform(0, 0.5, 1)
+            self._l4 = [float(int(predisp == 2)*0.5 + rands)]
+            self._l2 = [float(int(predisp == 1)*0.5 + np.random.uniform(0, rands, 1))]
+            self._home = [1-self._l4[0] - self._l2[0]]
 
-            self._L4_Q_Predisp = np.sum(self._l4)
-            self._Predisp_L2_L4 = np.sum(self._l2)
+            self._L4_Q_Predisp = 0.5*np.sum(self._l4) + np.random.uniform(0, 0.5, 1)
+            self._Predisp_L2_L4 = 0.5*np.sum(self._l2) + np.random.uniform(0, 0.5, 1)
             self._time_CHV = int(np.random.randint(0, 8, 1))
             self._CHV = 0
 
@@ -40,33 +47,42 @@ class Mother_simplified:
 
     def build_Net(self, mothers):
         for idx, mother in enumerate(mothers):
-            if (self._id != idx) and (np.linalg.norm(np.array(self._location) - np.array(mother._location)) < 0.05) and (self._SES == mother._SES):
+            if (self._id != idx) and (np.linalg.norm(np.array(self._location) - np.array(mother._location)) < self.network_distance) and (self._SES == mother._SES):
                 self._network.append(idx) 
 
     def influence_Net(self, mothers):
-        friends = int(len(self._network)/2)
+        friends = int(len(self._network) * self.network_influence)
         net = random.sample(self._network, friends)
         for mother in net:
-            mothers[mother]._l4.append(int((self._facility == 2) and (self._delivery == 1)))
-            mothers[mother]._l2.append(int((self._facility == 1) and (self._delivery == 1)))
-            mothers[mother]._home.append(int((self._facility == 0) and (self._delivery == 1)))
+            if (self._facility == 2) and (self._delivery == 1):
+                mothers[mother]._l4.append(1)
+            elif (self._facility == 2) and (self._delivery == -1):
+                mothers[mother]._l4.append(0)
+            elif (self._facility == 1) and (self._delivery == 1):
+                mothers[mother]._l2.append(1)
+            elif (self._facility == 1) and (self._delivery == -1):
+                mothers[mother]._l2.append(0)
+            elif (self._facility == 0) and (self._delivery == 1):
+                mothers[mother]._home.append(1)
+            else:
+                mothers[mother]._home.append(0)
 
     def update_predisp(self):
-        CHV_weight = 0.3
-        Rec_weight = 0.2
+        CHV_weight = self.CHV_weight
+        Rec_weight = self.Rec_weight
         if self._l4[-1] == 2:
             L4_predisp = (1-CHV_weight)*np.sum(self._l4[:-1])/len(self._l4) + CHV_weight*self._l4[-1]*0.5/len(self._l4)
         else:
             L4_predisp = (1-Rec_weight)*np.sum(self._l4[:-1])/len(self._l4) + Rec_weight*self._l4[-1]/len(self._l4)
-            L2_predisp = (1-Rec_weight)*np.sum(self._l2[:-1])/len(self._l2) + Rec_weight*self._l2[-1]/len(self._l2)
-            home = (1-Rec_weight)*np.sum(self._home[:-1])/len(self._home) + Rec_weight*self._home[-1]/len(self._home)
+        L2_predisp = (1-Rec_weight)*np.sum(self._l2[:-1])/len(self._l2) + Rec_weight*self._l2[-1]/len(self._l2)
+        home = (1-Rec_weight)*np.sum(self._home[:-1])/len(self._home) + Rec_weight*self._home[-1]/len(self._home)
 
-        self._L4_Q_Predisp = L4_predisp/(L4_predisp + L2_predisp + home)
-        self._Predisp_L2_L4 = L2_predisp/(L4_predisp + L2_predisp + home)
+        self._L4_Q_Predisp = float(L4_predisp/(L4_predisp + L2_predisp + home))
+        self._Predisp_L2_L4 = float(L2_predisp/(L4_predisp + L2_predisp + home))
 
     def see_CHV(self):
-        if (np.random.binomial(1, 0.2, 1) == 1) and (self._CHV == 0):
-            self._CHV == 1
+        if (np.random.binomial(1, self.CHV_likelihood, 1) == 1) and (self._CHV == 0):
+            self._CHV = 1
             self._l4.append(2)
 
     def choose_delivery(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity):
