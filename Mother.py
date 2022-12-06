@@ -2,26 +2,24 @@ import numpy as np
 
 
 class Mother_simplified:
-    def __init__(self, max_gest_age, B):
+    def __init__(self, max_gest_age, Health_const_0, Health_slope_0):
         """initiate characteristics of Mother agent"""
-        Health_const_0 = B['Health_const_0']
-        Health_slope_0 = B['Health_slope_0']
-
         self.logit_health = Health_const_0 + Health_slope_0 * (np.random.uniform(-1, 1, 1))
+        self.logit_health_BL = self.logit_health
         self._health = logistic(self.logit_health)
 
-        self.B = B
-
         self._gest_age = -(np.int(np.random.randint(-9, max_gest_age, 1)))
-
         self._delivery = None
         self._facility = None
         self.delivered = False  # needed to count the number of deliveries per month
 
+    def set_B(self, B):
+        self.B = B
+
     def choose_delivery(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity):
         """delivery facility depending on where one goes for care and health status"""
 
-        prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0, _ = \
+        prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0 = \
             get_prob_logit_health(self.B, l4_quality, l2_quality, health_outcomes, self.logit_health)
 
         rand = np.random.uniform(0, 1, 1)
@@ -88,7 +86,7 @@ def get_prob_logit_health(B, l4_quality, l2_quality, health_outcomes, logit_init
     prob_l4 = logistic([logit_predisp_l4 - 2])
     prob_l2 = logistic([logit_predisp_l2_l4 - 2])
 
-    logit_health_BL    = Health_const_0 + Health_slope_0 * (np.random.uniform(-1, 1, 1)) # not used for initialization
+    # logit_health_BL    = Health_const_0 + Health_slope_0 * (np.random.uniform(-1, 1, 1)) # not used for initialization
 
     logit_health_l4    = logit_initial + Q_Health_multiplier * (l4_quality - 1 / 2) + Q_Health_L4_constant
     logit_health_l2    = logit_initial + Q_Health_multiplier * (l2_quality - 1 / 2) + \
@@ -97,7 +95,7 @@ def get_prob_logit_health(B, l4_quality, l2_quality, health_outcomes, logit_init
                                      Q_Health_L4_constant - Q_Health_L4_referral_difference
     logit_health_l0    = logit_initial - Q_Health_Home_negative
 
-    return prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0, logit_health_BL
+    return prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0
 
 class Mother:
     def __init__(self, wealth, education, age, no_children, max_gest_age, B):
@@ -115,6 +113,7 @@ class Mother:
 
         self._gest_age = -(np.int(np.random.randint(-8, max_gest_age, 1)))
         self.logit_health = Health_const_0 + Health_slope_0 * (np.random.uniform(-1, 1, 1))
+        self.logit_health_BL = self.logit_health
         self._health = logistic(self.logit_health)
         self._predisp_ANC = Predisp_ANC_const_0 + Predisp_ANC_slope_0 * (np.random.uniform(-1, 1, 1))
 

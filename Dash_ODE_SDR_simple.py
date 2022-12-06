@@ -24,6 +24,7 @@ from Dash_ODE_Methods import logistic, many_sliders, make_slider
 #   time window
 
 random.seed(10)
+nt = 25*2 # number of months 12*4*2
 # INITIALIZE DATA FOR CLASS MOTHER
 # read file of data with columns 1-4 [Mother]: wealth, education, age, number of children
 # simulate for health, gestational age, predisposition for ANC
@@ -48,7 +49,7 @@ no_mothers  = len(age)
 proximity = 0.8
 
 def set_variables(X_info, name_append = '', nt=0):
-    X_names, X_0, X_label, X_idx_names = [], [], [], []
+    X_names, X_0, X_initial, X_label, X_idx_names = [], [], [], [], []
     for i in range(len(X_info)):
         name = X_info[i][0]            # name of the variable is set, e.g. name = 'P_P_target'
         X_names.append(name)           # C_names = ['P_P_target',...]
@@ -58,14 +59,17 @@ def set_variables(X_info, name_append = '', nt=0):
         globals()[name + name_append] = X_0[i]  # P_P_target = C_0[0] = 0.8 for model and sliders
         if nt > 0:                         # S_P_P_0 = X_0[0] for stocks
             globals()[name] = np.zeros(nt) # S_P_P = np.zeros(nt) for stocks
+        if X_info[i][3] == None:
+            X_initial.append(X_info[i][1])
+        else:
+            X_initial.append(X_info[i][3])
 
-    return X_names, X_0, X_label, X_idx_names
+    return X_names, X_0, X_initial, X_label, X_idx_names
 
 
 # APP SETUP
 
 # Make time array for solution
-nt = 12*5*2 # number of months
 # RR  Resources for RMNCH
 # R2  Healthcare financing (Resources for 2/3 facilities)
 # R4  Healthcare financing (Resources for 4/5 facilities)
@@ -74,90 +78,99 @@ nt = 12*5*2 # number of months
 
 # Names, initial values
 S_info = [
-    ['P_RR',  0.2, 'Resources_RMNCH'            ],
-    ['L4_HF', 0.2, 'HC_Financing_4/5'           ], #
-    ['L2_HF', 0.2, 'HC_Financing_2/3'           ], #
-    ['S_FR',  0.2, 'SDR_Facility_Repurposing'   ],
-    ['L4_HR', 0.3, 'HR_Readiness_4/5'           ],
-    ['L2_HR', 0.2, 'HR_Readiness_2/3'           ],
-    ['L4_DC', 0.4, 'Delivery_Capacity_4/5'      ],
-    ['L2_DC', 0.9, 'Delivery_Capacity_2/3'      ],
-    ['P_D',   0.6, 'Performance_Data'           ],
-    ['L4_Q',  0.5, 'Quality_4/5'                ],
-    ['L2_Q',  0.4, 'Quality_2/3'                ], #
+    ['P_RR',  0.2, 'Resources_RMNCH'            , None],
+    ['L4_HF', 0.2, 'HC_Financing_4/5'           , None], #
+    ['L2_HF', 0.2, 'HC_Financing_2/3'           , None], #
+    ['S_FR',  0.2, 'SDR_Facility_Repurposing'   , None],
+    ['L4_HR', 0.3, 'HR_Readiness_4/5'           , None],
+    ['L2_HR', 0.2, 'HR_Readiness_2/3'           , None],
+    ['L4_DC', 0.4, 'Delivery_Capacity_4/5'      , None],
+    ['L2_DC', 0.9, 'Delivery_Capacity_2/3'      , None],
+    ['P_D',   0.6, 'Performance_Data'           , None],
+    ['L4_Q',  0.5, 'Quality_4/5'                , None],
+    ['L2_Q',  0.4, 'Quality_2/3'                , None], #
 ]
 
-S_names, S_0, S_label, S_idx_names = set_variables(S_info, nt=nt)
+S_names, S_0, _, S_label, S_idx_names = set_variables(S_info, nt=nt)
 
 # FACTORS
 FP_info = [
-    ['Funding_MNCH',          0.2, 'Funding_MNCH'         ],
-    ['Adherence_budget',      0.2, 'Adherence_budget'     ],
-    ['Employee_incentives',   0.2, 'Employee_incentives'  ],
-    ['Strong_referrals',      0.2, 'Strong_referrals'     ],
-    ['Training_incentives',   0.2, 'Training_incentives'  ],
+    ['Funding_MNCH',          0.2, 'Funding_MNCH'         , None],
+    ['Adherence_budget',      0.2, 'Adherence_budget'     , None],
+    ['Employee_incentives',   0.2, 'Employee_incentives'  , None],
+    ['Strong_referrals',      0.2, 'Strong_referrals'     , None],
+    ['Training_incentives',   0.2, 'Training_incentives'  , None],
 ]
 
 FP_combination_info = [
-    ['INCREASE_ALL_P', 0.0, 'INCREASE_ALL_P'],
-    ['INCREASE_ALL_P', 0.0, 'INCREASE_SOME_P'],
+    ['INCREASE_ALL_P', 0.0, 'INCREASE_ALL_P' , None],
+    ['INCREASE_ALL_P', 0.0, 'INCREASE_SOME_P', None],
 ]
 
-FP_names, FP_0, FP_label, FP_idx_names = set_variables(FP_info)
-FP_combination_names, FP_combination_0, FP_combination_label, FP_combination_idx_names = \
+FP_names, FP_0, FP_initial, FP_label, FP_idx_names = set_variables(FP_info)
+FP_combination_names, FP_combination_0, _, FP_combination_label, FP_combination_idx_names = \
     set_variables(FP_combination_info)
 
 B_info = [
-    ['BL_Capacity_factor',        20, 'BL_Capacity_Factor'                ],
-    ['Initial_Negative_Predisp',   2, 'Initial_Negative_Predisp'],
-    ['Health_outcomes__Predisp', 3.2, 'Health outcome -> Predisp hospital'], #
-    ['L4_Q__Predisp',            0.5, 'L4/5 quality -> Predisp hospital'  ],
-    ['Predisp_L2_L4',            2.0, 'Predisp L2'], #
-    ['Health_const_0',           0.8, 'Initial Health'],
-    ['Health_slope_0',           0.2, 'Variability Initial Health'],#
-    ['Q_Health_multiplier',             4., 'Q Health Effect'], #
-    ['Q_Health_L4_constant',            1.5, 'L4 Health Effect'],
-    ['Q_Health_L4_L2_difference',        1., 'Difference L4-L2 Health Effect'],
-    ['Q_Health_L4_referral_difference', 0.5, 'L2 -> L4 Referral Health Effect'],
-    ['Q_Health_Home_negative',          3.0, 'Home Delivery Health Effect'], #
-    ['Time_delay_awareness',           24.0, 'Awareness Delay (months)'], #
+    # ['Health_outcomes__Predisp', 3.2, 'Health outcome -> Predisp hospital', 0.0], #
+    ['BL_Capacity_factor',        20, 'BL Capacity Factor'                , 20 ],
+    ['Initial_Negative_Predisp',   2, 'Initial Negative Predisp'          , None],
+    ['Health_outcomes__Predisp', 3.2, 'Health outcome -> Predisp hospital', 1.0], #
+    ['L4_Q__Predisp',            0.5, 'L4/5 quality -> Predisp hospital'  , 0.2],
+    ['Predisp_L2_L4',            2.0, 'Predisp L2'                        , 1.0], #
+    ['Health_const_0',           0.8, 'Initial Health (do not change)'    , None], #
+    ['Health_slope_0',           0.2, 'Variability Initial Health (do not change)', None],#
+    ['Q_Health_multiplier',             4., 'Q Health Effect'                     , None], #
+    ['Q_Health_L4_constant',            1.5, 'L4 Health Effect'                   , None],
+    ['Q_Health_L4_L2_difference',        1., 'Difference L4-L2 Health Effect'     , None],
+    ['Q_Health_L4_referral_difference', 0.5, 'L2 -> L4 Referral Health Effect'    , None],
+    ['Q_Health_Home_negative',          3.0, 'Home Delivery Health Effect'        , None], #
+    ['Time_delay_awareness',            2.0, 'Awareness Delay (months)'           , None], # 24
 ]
 
-B_names, B_0, B_label, B_idx_names = set_variables(B_info)
+B_names, B_0, B_initial, B_label, B_idx_names = set_variables(B_info)
+B_Health_const_0 = np.array(B_0)[np.array(B_names) == 'Health_const_0'][0] # set for later
+B_Health_slope_0 = np.array(B_0)[np.array(B_names) == 'Health_slope_0'][0]
+
 
 # MODEL PARAMETER INFORMATION FOR SLIDERS
 C_info = [
-    ['P_D_target',     0.7, 'Data Performance target'],
-    ['L4_HF_target_0', 0.8, 'L4/5 HC Financing target'],
-    ['L2_HF_target_0', 0.6, 'L2/3 HC Financing target'],
-    ['L4_target_0',    0.9, 'L4 target'],
-    ['L2_target_0',    0.9, 'L2 target'],
-    ['S_FR_target_0',  0.7, 'SDR FR target'],
-    ['S_T_target_0',   0.9, 'SDR T target'],
-    ['dL4_DC_in_0',    0.2, 'L4 Rate of Capacity Increase'],
-    ['dL2_DC_in_0',    0.2, 'L2 Rate of Capacity Decrease'],
-    ['P_RR_target_0',  1.0, 'Resources RMNCH target'],
-    ['L4_DC_target',   0.9, 'L4 Delivery Capacity Target'],
-    ['L2_DC_target',   0.1, 'L2 Delivery Capacity Target'],
+    ['P_D_target',     0.7, 'Data Performance target'     , None],
+    ['L4_HF_target_0', 0.8, 'L4/5 HC Financing target'    , None],
+    ['L2_HF_target_0', 0.6, 'L2/3 HC Financing target'    , None],
+    ['L4_target_0',    0.9, 'L4 target'                   , None],
+    ['L2_target_0',    0.9, 'L2 target'                   , None],
+    ['S_FR_target_0',  0.7, 'SDR FR target'               , None],
+    ['S_T_target_0',   0.9, 'SDR T target'                , None],
+    ['dL4_DC_in_0',    0.2, 'L4 Rate of Capacity Increase', None],
+    ['dL2_DC_in_0',    0.2, 'L2 Rate of Capacity Decrease', None],
+    ['P_RR_target_0',  1.0, 'Resources RMNCH target'      , None],
+    ['L4_DC_target',   0.9, 'L4 Delivery Capacity Target' , None],
+    ['L2_DC_target',   0.1, 'L2 Delivery Capacity Target' , None],
 ]
 
 # SET UP OTHER INTERMEDIATE PYTHON VARIABLES FOR THE MODEL AND SLIDERS
-C_names, C_0, C_label, C_idx_names = set_variables(C_info)
+C_names, C_0, C_initial, C_label, C_idx_names = set_variables(C_info)
 
-def set_F_change(F_0):
-    F_original = np.zeros(len(F_0)) # original values
-    F_change   = np.zeros(len(F_0)) # changed values based on sliders
-    for i in range(len(F_0)):
-        F_original[i] = F_0[i] # get the hard-coded value, originally from F_info
-        F_change[i]   = F_0[i] # initialize (don't copy the object, just the value)
-    return F_original, F_change
+# def set_F_change(F_0):
+#     F_original = np.zeros(len(F_0)) # original values
+#     F_change   = np.zeros(len(F_0)) # changed values based on sliders
+#     for i in range(len(F_0)):
+#         F_original[i] = F_0[i] # get the hard-coded value, originally from F_info
+#         F_change[i]   = F_0[i] # initialize (don't copy the object, just the value)
+#     return F_original, F_change
 
-FP_original, FP_change = set_F_change(FP_0)
+# F_initial = F_original, F_change = F_0
+FP_original, FP_change = np.ones(len(FP_0))*FP_initial, np.ones(len(FP_0))*FP_0
+B_original, B_change   = np.ones(len(B_0) )*B_initial,  np.ones(len(B_0) )*B_0
+C_original, C_change   = np.ones(len(C_0) )*C_initial,  np.ones(len(C_0) )*C_0
+
+# FP_original, FP_change = set_F_change(FP_0)
 
 # Parameters for ODE solver
 parameters = {
-    't_change' :  0.0,
-    'beta' : 1.0
+    't_change' :  10.0,
+    'beta'      :  1.0
 }
 
 y_0 = S_0
@@ -193,8 +206,11 @@ def window_average(x, t, window_duration, x0=1, x1=None, linear_weights=True):
 
 def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the sliders
     # P_values = parameter values
-    for i in range(len(FP_values)): # for each F-slider
-        FP_change[i] = FP_values[i] # F-parameter that is collected from the slider
+    # for i in range(len(FP_values)): # for each F-slider
+    #     FP_change[i] = FP_values[i] # F-parameter that is collected from the slider
+    FP_change = np.array(FP_values)
+    B_change  = np.array(B_values)
+    C_change  = np.array(C_values)
 
     parameters['t_change'] = P_values[0] # slider value for time when the parameters change
     parameters['beta']     = P_values[1] # slider value for beta
@@ -216,24 +232,25 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
 
     B = {} # Use a dictionary so that we only need to pass B to the Mother class
     for idx,name in B_idx_names:
-        B[name] = B_values[idx]         # B['Health_outcomes__Predisp'] = 2.4
-        globals()[name] = B_values[idx] # Health_outcomes__Predisp = 2.4
+        B[name] = B_original[idx]         # B['Health_outcomes__Predisp'] = 2.4
+        globals()[name] = B_original[idx] # Need to initialize for get_prob_logit_health
 
-    for idx,name in C_idx_names:
-        globals()[name] = C_values[idx] # P_P_target = 0.8
+    # for idx,name in C_idx_names:
+        # globals()[name] = C_values[idx] # P_P_target = 0.8
 
-    mothers = []
+    mothers = [] # need to reset
 
     for mother in range(0, no_mothers):
-        mothers.append(Mother_simplified(nt, B))
+        # mothers.append(Mother_simplified(nt, B['Health_const_0'], B['Health_slope_0']))
+        mothers.append(Mother_simplified(nt, B_Health_const_0, B_Health_slope_0))
 
     # OTHER MISCELLANEOUS FACTORS
     L4_D_Capacity_Multiplier = 2
 
     # INITIAL PROBABILITIES
     L2_4_health_outcomes_0 = 0  # initialize with low opinion of health outcomes
-    prob_l4_0, prob_l2_0, logit_health_l4_0, logit_health_l2_0, logit_health_l4_l2_0, logit_health_l0_0, _ = \
-        get_prob_logit_health(B, L4_Q[0], L2_Q[0], L2_4_health_outcomes_0, B['Health_const_0'])
+    prob_l4_0, prob_l2_0, logit_health_l4_0, logit_health_l2_0, logit_health_l4_l2_0, logit_health_l0_0 = \
+        get_prob_logit_health(B, L4_Q[0], L2_Q[0], L2_4_health_outcomes_0, B_Health_const_0)
     P_D[0] = logistic(logit_health_l0_0) # B['Health_const_0'] - B['Q_Health_Home_negative']
 
     # LOOP OVER EVERY TIME VALUE
@@ -241,12 +258,25 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
         if t > parameters['t_change']: # IF TIME IS LARGER THAN THE t_change SLIDER VALUE
             for idx, name in FP_idx_names:
                 globals()[name] = FP_change[idx] # then use the SLIDER value for the F-parameter, e.g., Visibility = 0.0
+            for idx, name in B_idx_names:
+                globals()[name] = B_change[idx] # then use the SLIDER value for the F-parameter, e.g., Visibility = 0.0
+                B[name] = B_change[idx]  # need to set B for mothers
+            for idx, name in C_idx_names:
+                globals()[name] = C_change[idx] # then use the SLIDER value for the F-parameter, e.g., Visibility = 0.0
         else:                                   # otherwise
             for idx, name in FP_idx_names:
                 globals()[name] = FP_original[idx] # use the HARD-CODED value for the F-parameter saved in F_info
+            for idx, name in B_idx_names:
+                globals()[name] = B_original[idx] # use the HARD-CODED value for the F-parameter saved in F_info
+                B[name] = B_original[idx]
+            for idx, name in C_idx_names:
+                globals()[name] = C_original[idx] # use the HARD-CODED value for the F-parameter saved in F_info
 
         t_all[t+1] = t_all[t] + 1 # increment by month
         gest_age, health, anc, delivery, facility = [], [], [], [], []
+        for mother in mothers:
+            mother.set_B(B)
+
         for idx,name in S_idx_names:
             d_name = 'd' + name
             globals()[d_name + '_in'] = 0.0
@@ -358,7 +388,7 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
 
         P_D[t+1]   = L2_4_health_outcomes
 
-        prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0, _ = \
+        prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0 = \
             get_prob_logit_health(B, l4_quality, l2_quality, L2_4_health_outcomes, B['Health_const_0'])
 
         probs[t+1,:] = np.append(
@@ -381,14 +411,16 @@ colors = {
     'text': '#1f77b4'  # dark blue
 }
 
-FP_sliders = many_sliders(FP_label,'FP_slider',FP_0,np.zeros(len(FP_0)),
+# S sliders hard coded
+FP_sliders = many_sliders(FP_label,'FP_slider',FP_0,FP_initial,np.zeros(len(FP_0)),
                           np.array(FP_0)*4, num_rows=3, num_cols=2, width=6) # add 0 to 1 slider for INCREASE ALL
-FP_combination_sliders = many_sliders(FP_combination_label,'FP_combination_slider',FP_combination_0,
+FP_combination_sliders = many_sliders(FP_combination_label,'FP_combination_slider',FP_combination_0,[],
                                       np.zeros(len(FP_combination_0)),np.ones(len(FP_combination_0)),
                                       num_rows=1, num_cols=2, width=6)
-B_sliders = many_sliders(B_label,'B_slider',B_0,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=4, num_cols=4, width=3)
+B_sliders = many_sliders(B_label,'B_slider',B_0,B_initial,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=4, num_cols=4, width=3)
 # many_sliders(labels, type used in Input() as an identifier of group of sliders, initial values, min, max, ...
-C_sliders = many_sliders(C_label,'C_slider',C_0,np.zeros(len(C_0)),np.ones(len(C_0)), num_rows=3, num_cols=4, width=3)
+C_sliders = many_sliders(C_label,'C_slider',C_0,C_initial,np.zeros(len(C_0)),np.ones(len(C_0)), num_rows=3, num_cols=4, width=3)
+
 fcolor = '#316395'  # font
 fsize = 36  # font size
 
@@ -408,12 +440,12 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
             dbc.Row([
                 dbc.Col([
                     html.Div([
-                        make_slider(i,S_label[i],'S_slider',S_0[i]) for i in range(0,6)
+                        make_slider(i,S_label[i],'S_slider',S_0[i],None) for i in range(0,6)
                     ]),
                 ],width=6),
                 dbc.Col([
                     html.Div([
-                        make_slider(i,S_label[i],'S_slider',S_0[i]) for i in range(6,len(S_0))
+                        make_slider(i,S_label[i],'S_slider',S_0[i],None) for i in range(6,len(S_0))
                         # make_slider(i, S_label[i], 'S_slider', S_0[i]) for i in range(6, len(S_0))
             ]),
                 ],width=6),
@@ -452,12 +484,12 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
         dbc.Col(html.H5('Meta parameters', style={'fontSize':fsize, 'color':fcolor}), width=3),
         dbc.Col([
             html.Div([
-                make_slider(0, 'Time when factor changes will take place', 'P_slider', parameters['t_change'], 0, nt)
+                make_slider(0, 'Time when factor changes will take place', 'P_slider', parameters['t_change'], None, 0, nt)
             ]),
         ], width=3),
         dbc.Col([
             html.Div([
-                make_slider(1, 'Common coefficient for rate of change', 'P_slider', parameters['beta'], 0, 2.0)
+                make_slider(1, 'Common coefficient for rate of change', 'P_slider', parameters['beta'], None, 0, 2.0)
             ]),
         ], width=3),
     ], className="pretty_container"),
