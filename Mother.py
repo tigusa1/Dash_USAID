@@ -26,6 +26,7 @@ class Mother_simplified:
             predisp = np.int(np.random.randint(0,3,1)) # a random integer from 0 to 2
             self._l4 = [int(predisp == 2)]
             self._l2 = [int(predisp == 1)]
+            self._home = [int(predisp == 0)]
 
             self._L4_Q_Predisp = np.sum(self._l4)
             self._Predisp_L2_L4 = np.sum(self._l2)
@@ -51,8 +52,17 @@ class Mother_simplified:
             mothers[mother]._l2.append(int((self._facility == 0) and (self._delivery == 1)))
 
     def update_predisp(self):
-        self._L4_Q_Predisp = np.sum(self._l4)/len(self._l4)
-        self._Predisp_L2_L4 = np.sum(self._l2)/len(self._l2) 
+        CHV_weight = 0.3
+        Rec_weight = 0.2
+        if self._l4[-1] == 2:
+            L4_predisp = (1-CHV_weight)*self._l4[:-1] + CHV_weight*self._l4[-1]
+        else:
+            L4_predisp = (1-Rec_weight)*np.sum(self._l4[:-1])/len(self._l4) + Rec_weight*self._l4[-1]/len(self._l4)
+            L2_predisp = (1-Rec_weight)*np.sum(self._l2[:-1])/len(self._l2) + Rec_weight*self._l2[-1]/len(self._l2)
+            home = (1-Rec_weight)*np.sum(self._home[:-1])/len(self._home) + Rec_weight*self._home[-1]/len(self._home)
+
+        self._L4_Q_Predisp = L4_predisp/(L4_predisp + L2_predisp + home)
+        self._Predisp_L2_L4 = L2_predisp/(L4_predisp + L2_predisp + home)
 
     def see_CHV(self):
         if (np.random.binomial(1, 0.2, 1) == 1) and (self._CHV == 0):
