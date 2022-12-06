@@ -1,8 +1,9 @@
 import numpy as np
-
+import random
 
 class Mother_simplified:
-    def __init__(self, max_gest_age, Health_const_0, Health_slope_0):
+    def __init__(self, max_gest_age, B, unique_id, df, Health_const_0, Health_slope_0):
+    # def __init__(self, max_gest_age, Health_const_0, Health_slope_0):
         """initiate characteristics of Mother agent"""
         self.logit_health = Health_const_0 + Health_slope_0 * (np.random.uniform(-1, 1, 1))
         self.logit_health_BL = self.logit_health
@@ -13,11 +14,56 @@ class Mother_simplified:
         self._facility = None
         self.delivered = False  # needed to count the number of deliveries per month
 
-    def set_B(self, B):
+        self.flag_network = True
+
+        if self.flag_network:
+            self._network = []
+
+            self._id = unique_id
+            self._SES = df['wealth'][unique_id]
+            self._location = df['new_lat_long'][unique_id]
+
+            predisp = np.int(np.random.randint(0,3,1))
+            self._l4 = [int(predisp == 2)]
+            self._l2 = [int(predisp == 1)]
+
+            self._L4_Q_Predisp = np.sum(self._l4)
+            self._Predisp_L2_L4 = np.sum(self._l2)
+            self._time_CHV = int(np.random.randint(0, 8, 1))
+            self._CHV = 0
+
         self.B = B
+
+    def set_B(self, B):
+        pass
+
+    def build_Net(self, mothers):
+        for idx, mother in enumerate(mothers):
+            if (self._id != idx) and (np.linalg.norm(np.array(self._location) - np.array(mother._location)) < 0.05) and (self._SES == mother._SES):
+                self._network.append(idx) 
+
+    def influence_Net(self, mothers):
+        friends = int(len(self._network)/2)
+        net = random.sample(self._network, friends)
+        for mother in net:
+            mothers[mother]._l4.append(int((self._facility == 2) and (self._delivery == 1)))
+            mothers[mother]._l2.append(int((self._facility == 1) and (self._delivery == 1)))
+            mothers[mother]._l2.append(int((self._facility == 0) and (self._delivery == 1)))
+
+    def update_predisp(self):
+        self._L4_Q_Predisp = np.sum(self._l4)/len(self._l4)
+        self._Predisp_L2_L4 = np.sum(self._l2)/len(self._l2) 
+
+    def see_CHV(self):
+        if (np.random.binomial(1, 0.2, 1) == 1) and (self._CHV == 0):
+            self._CHV == 1
+            self._l4.append(1)
 
     def choose_delivery(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity):
         """delivery facility depending on where one goes for care and health status"""
+
+        # self.B['L4_Q__Predisp'] = self._L4_Q_Predisp
+        # self.B['Predisp_L2_L4'] = self._Predisp_L2_L4
 
         prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0 = \
             get_prob_logit_health(self.B, l4_quality, l2_quality, health_outcomes, self.logit_health)
@@ -52,14 +98,18 @@ class Mother_simplified:
         else:
             self.baby_delivery = 1
 
-    def increase_age(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity):
+    def increase_age(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity, mothers, ts):
         """increase gestational age (step)"""
+        if ts == 0:
+            self.build_Net(mothers)
         self._gest_age = self._gest_age + 1
-        if (self._gest_age > 0) & (self._gest_age < 9):
-            pass
+        self.update_predisp()
+        if self._gest_age == self._time_CHV:
+            self.see_CHV()
         elif self._gest_age == 9:
             self.choose_delivery(l4_quality, l2_quality, health_outcomes, L2_net_capacity)
             self.deliver()
+            self.influence_Net(mothers)
         self._health = logistic(self.logit_health)
 
 def get_prob_logit_health(B, l4_quality, l2_quality, health_outcomes, logit_initial):

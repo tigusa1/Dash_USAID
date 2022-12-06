@@ -7,7 +7,6 @@ import dash_bootstrap_components as dbc # conda install -c conda-forge dash-boot
 def logistic(x):
     return 1 / (1 + np.exp(-np.mean(x)))
 
-
 def slider_markers(start=0, end=1, red=None, blue=None, num_steps=20):
     eps = 0.0001
     max_value = end + eps
