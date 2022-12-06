@@ -14,7 +14,7 @@ class Mother_simplified:
         self._facility = None
         self.delivered = False  # needed to count the number of deliveries per month
 
-        self.flag_network = True
+        self.flag_network = False
 
         if self.flag_network:
             self._network = []
@@ -23,7 +23,7 @@ class Mother_simplified:
             self._SES = df['wealth'][unique_id]
             self._location = df['new_lat_long'][unique_id]
 
-            predisp = np.int(np.random.randint(0,3,1))
+            predisp = np.int(np.random.randint(0,3,1)) # a random integer from 0 to 2
             self._l4 = [int(predisp == 2)]
             self._l2 = [int(predisp == 1)]
 
@@ -62,8 +62,9 @@ class Mother_simplified:
     def choose_delivery(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity):
         """delivery facility depending on where one goes for care and health status"""
 
-        # self.B['L4_Q__Predisp'] = self._L4_Q_Predisp
-        # self.B['Predisp_L2_L4'] = self._Predisp_L2_L4
+        if self.flag_network:
+            self.B['L4_Q__Predisp'] = self._L4_Q_Predisp
+            self.B['Predisp_L2_L4'] = self._Predisp_L2_L4
 
         prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0 = \
             get_prob_logit_health(self.B, l4_quality, l2_quality, health_outcomes, self.logit_health)
@@ -100,16 +101,23 @@ class Mother_simplified:
 
     def increase_age(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity, mothers, ts):
         """increase gestational age (step)"""
-        if ts == 0:
-            self.build_Net(mothers)
         self._gest_age = self._gest_age + 1
-        self.update_predisp()
-        if self._gest_age == self._time_CHV:
-            self.see_CHV()
-        elif self._gest_age == 9:
+
+        if self.flag_network:
+            if ts == 0:
+                self.build_Net(mothers)
+
+            if self._gest_age == self._time_CHV:
+                self.see_CHV()
+
+            self.update_predisp()
+
+        if self._gest_age == 9:
             self.choose_delivery(l4_quality, l2_quality, health_outcomes, L2_net_capacity)
             self.deliver()
-            self.influence_Net(mothers)
+            if self.flag_network:
+                self.influence_Net(mothers)
+
         self._health = logistic(self.logit_health)
 
 def get_prob_logit_health(B, l4_quality, l2_quality, health_outcomes, logit_initial):
