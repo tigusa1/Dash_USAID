@@ -49,13 +49,13 @@ class Mother_simplified:
         for mother in net:
             mothers[mother]._l4.append(int((self._facility == 2) and (self._delivery == 1)))
             mothers[mother]._l2.append(int((self._facility == 1) and (self._delivery == 1)))
-            mothers[mother]._l2.append(int((self._facility == 0) and (self._delivery == 1)))
+            mothers[mother]._home.append(int((self._facility == 0) and (self._delivery == 1)))
 
     def update_predisp(self):
         CHV_weight = 0.3
         Rec_weight = 0.2
         if self._l4[-1] == 2:
-            L4_predisp = (1-CHV_weight)*self._l4[:-1] + CHV_weight*self._l4[-1]
+            L4_predisp = (1-CHV_weight)*np.sum(self._l4[:-1])/len(self._l4) + CHV_weight*self._l4[-1]*0.5/len(self._l4)
         else:
             L4_predisp = (1-Rec_weight)*np.sum(self._l4[:-1])/len(self._l4) + Rec_weight*self._l4[-1]/len(self._l4)
             L2_predisp = (1-Rec_weight)*np.sum(self._l2[:-1])/len(self._l2) + Rec_weight*self._l2[-1]/len(self._l2)
@@ -67,7 +67,7 @@ class Mother_simplified:
     def see_CHV(self):
         if (np.random.binomial(1, 0.2, 1) == 1) and (self._CHV == 0):
             self._CHV == 1
-            self._l4.append(1)
+            self._l4.append(2)
 
     def choose_delivery(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity):
         """delivery facility depending on where one goes for care and health status"""
