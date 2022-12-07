@@ -40,7 +40,7 @@ class Mother_simplified:
             self._home = [1-self._l4[0] - self._l2[0]] # remaining 
 
             self._L4_Q_Predisp = self._l4[0]
-            self._Predisp_L2_L4 = self._l2[0]
+            self._Predisp_L2_L4 = self._l2[0] + self._L4_Q_Predisp
             self._time_CHV = int(np.random.randint(0, 8, 1))
             self._CHV = 0
 
@@ -83,7 +83,7 @@ class Mother_simplified:
         home = (1-Rec_weight)*np.sum(self._home[:-1])/len(self._home) + Rec_weight*self._home[-1]/len(self._home)
 
         self._L4_Q_Predisp = float(L4_predisp/(L4_predisp + L2_predisp + home)) # percentage of her three choices 
-        self._Predisp_L2_L4 = float(L2_predisp/(L4_predisp + L2_predisp + home)) # percentage of her three choices 
+        self._Predisp_L2_L4 = float(L2_predisp/(L4_predisp + L2_predisp + home)) + self._L4_Q_Predisp# percentage of her three choices 
 
     def see_CHV(self): # if the mother sees a CHV, she will have additional positive influence to go to a level4/5 facility
         if (np.random.binomial(1, self.CHV_likelihood, 1) == 1) and (self._CHV == 0):
