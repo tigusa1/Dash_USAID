@@ -277,7 +277,7 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
         t_all[t+1] = t_all[t] + 1 # increment by month
         gest_age, health, anc, delivery, facility = [], [], [], [], []
         for mother in mothers:
-            mother.set_B(B)
+            mother.set_B(B) # change in B as set in B_change
 
         for idx,name in S_idx_names:
             d_name = 'd' + name

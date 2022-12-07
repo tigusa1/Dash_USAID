@@ -25,6 +25,9 @@ class Mother_simplified:
 
             self._network = []
 
+            self.network_distance = 0.05
+            self.network_influence = 0.5
+
             self._id = unique_id
             self._SES = df['wealth'][unique_id]
             self._location = df['new_lat_long'][unique_id]
@@ -44,6 +47,7 @@ class Mother_simplified:
         self.B = B
 
     def set_B(self, B):
+        # used in calc_y at every time step to allow for updates in B
         pass
 
     def build_Net(self, mothers):
@@ -148,8 +152,8 @@ class Mother_simplified:
         self._health = logistic(self.logit_health)
 
 def get_prob_logit_health(B, l4_quality, l2_quality, health_outcomes, logit_initial):
-    Health_const_0 = B['Health_const_0']
-    Health_slope_0 = B['Health_slope_0']
+    # Health_const_0 = B['Health_const_0']
+    # Health_slope_0 = B['Health_slope_0']
 
     Health_outcomes__Predisp = B['Health_outcomes__Predisp']
     L4_Q__Predisp = B['L4_Q__Predisp']
