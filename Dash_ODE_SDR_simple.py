@@ -117,11 +117,11 @@ B_info = [
     ['BL_Capacity_factor',        20, 'BL Capacity Factor'                , 20 ],
     ['Initial_Negative_Predisp',   2, 'Initial Negative Predisp'          , None],
     ['Health_outcomes__Predisp', 3.2, 'Health outcome -> Predisp hospital', 1.0], #
-    ['L4_Q__Predisp',            0.5, 'L4/5 quality -> Predisp hospital'  , 0.2],
-    ['Predisp_L2_L4',            2.0, 'Predisp L2'                        , 1.0], #
+    ['L_Q__Predisp',             0.5, 'L quality -> Predisp facility'     , 0.2],
+    ['Predisp_L2_nL4',           2.0, 'Predisp L2'                        , 1.0], # L2 given not L4
     ['Health_const_0',           0.8, 'Initial Health (do not change)'    , None], #
     ['Health_slope_0',           0.2, 'Variability Initial Health (do not change)', None],#
-    ['Q_Health_multiplier',             4., 'Q Health Effect'                     , None], #
+    ['Q_Health_multiplier',              4., 'Q Health Effect'                    , None], #
     ['Q_Health_L4_constant',            1.5, 'L4 Health Effect'                   , None],
     ['Q_Health_L4_L2_difference',        1., 'Difference L4-L2 Health Effect'     , None],
     ['Q_Health_L4_referral_difference', 0.5, 'L2 -> L4 Referral Health Effect'    , None],
@@ -250,10 +250,12 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
     L4_D_Capacity_Multiplier = 2
 
     # INITIAL PROBABILITIES
-    L2_4_health_outcomes_0 = 0  # initialize with low opinion of health outcomes
+    L2_4_health_outcomes_0 = np.zeros(3)  # initialize with low opinion of health outcomes
     prob_l4_0, prob_l2_0, logit_health_l4_0, logit_health_l2_0, logit_health_l4_l2_0, logit_health_l0_0 = \
         get_prob_logit_health(B, L4_Q[0], L2_Q[0], L2_4_health_outcomes_0, B_Health_const_0)
     P_D[0] = logistic(logit_health_l0_0) # B['Health_const_0'] - B['Q_Health_Home_negative']
+    L_health_outcomes = np.ones(3)
+    neg_health_outcomes = np.zeros(3)
 
     # LOOP OVER EVERY TIME VALUE
     for t in range(0,nt-1):
@@ -330,13 +332,13 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
         # window_average(x, t, window_duration, x0=1, x1=None, linear_weights=True)
         l2_quality_avg = window_average(L2_Q, t+1, time_window, linear_weights=True)
         l4_quality_avg = window_average(L4_Q, t+1, time_window, linear_weights=True)
-        L2_4_health_outcomes_avg = window_average(P_D, t+1, time_window, linear_weights=True)
+        # L2_4_health_outcomes_avg = window_average(P_D, t+1, time_window, linear_weights=True) # use neg_health_outcomes
 
         L2_deliveries = 0
         for mother in mothers:
 
             L2_net_capacity = 1 - (L2_deliveries + 0) / L2_D_Capacity[t] # add 1 to see if one more can be delivered
-            mother.increase_age(l4_quality_avg, l2_quality_avg, L2_4_health_outcomes_avg, L2_net_capacity, mothers, t)
+            mother.increase_age(l4_quality_avg, l2_quality_avg, neg_health_outcomes, L2_net_capacity, mothers, t)
             if mother.delivered:
                 L2_deliveries += 1
                 mother.delivered = False  # reset
@@ -384,15 +386,18 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
             L2_4_health_outcomes = P_D[0] # use home value
         else:
             L2_4_health_outcomes = 1 - sum(neg_HO_t[1:3]) / sum(deliveries_t[1:3]) # don't include neg_HO_t[3] = total neg HO
-        L_health_outcomes = np.ones(3) * P_D[0]
+
         for k in range(3):
             if deliveries_t[k] > 0:
-                L_health_outcomes[k] = 1 - neg_HO_t[k] / deliveries_t[k]
+                neg_health_outcomes[k] = neg_HO_t[k] / deliveries_t[k]
+            else:
+                neg_health_outcomes[k] = 0
+            L_health_outcomes[k] = 1 - neg_health_outcomes[k]
 
         P_D[t+1]   = L2_4_health_outcomes
 
         prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0 = \
-            get_prob_logit_health(B, l4_quality, l2_quality, L2_4_health_outcomes, B['Health_const_0'])
+            get_prob_logit_health(B, l4_quality, l2_quality, neg_health_outcomes, B['Health_const_0'])
 
         probs[t+1,:] = np.append(
                             np.array([prob_l4, prob_l2*(1-prob_l4), 1-prob_l4-prob_l2*(1-prob_l4),

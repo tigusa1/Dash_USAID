@@ -1,1 +1,109 @@
-<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\n  \"http://www.w3.org/TR/html4/loose.dtd\">\n<html>\n  <head>\n    <title>AttributeError: &#x27;Mother_simplified&#x27; object has no attribute &#x27;_l4&#x27; // Werkzeug Debugger</title>\n    <link rel=\"stylesheet\" href=\"?__debugger__=yes&amp;cmd=resource&amp;f=style.css\"\n        type=\"text/css\">\n    <!-- We need to make sure this has a favicon so that the debugger does\n         not accidentally trigger a request to /favicon.ico which might\n         change the application's state. -->\n    <link rel=\"shortcut icon\"\n        href=\"?__debugger__=yes&amp;cmd=resource&amp;f=console.png\">\n    <script src=\"?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js\"></script>\n    <script type=\"text/javascript\">\n      var TRACEBACK = 140665016208208,\n          CONSOLE_MODE = false,\n          EVALEX = false,\n          EVALEX_TRUSTED = true,\n          SECRET = \"None\";\n    </script>\n  </head>\n  <body style=\"background-color: #fff\">\n    <div class=\"debugger\">\n<h1>AttributeError</h1>\n<div class=\"detail\">\n  <p class=\"errormsg\">AttributeError: &#x27;Mother_simplified&#x27; object has no attribute &#x27;_l4&#x27;</p>\n</div>\n<h2 class=\"traceback\">Traceback <em>(most recent call last)</em></h2>\n<div class=\"traceback\">\n  <h3></h3>\n  <ul><li><div class=\"frame\" id=\"frame-140665016207968\">\n  <h4>File <cite class=\"filename\">\"/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Dash_ODE_SDR_simple.py\"</cite>,\n      line <em class=\"line\">568</em>,\n      in <code class=\"function\">update_graph</code></h4>\n  <div class=\"source \"><pre class=\"line before\"><span class=\"ws\"></span>)</pre>\n<pre class=\"line before\"><span class=\"ws\"></span>def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each argument is one of Input(...)</pre>\n<pre class=\"line before\"><span class=\"ws\">    </span># S_values_global = np.array(S_values) # used for sensitivities</pre>\n<pre class=\"line before\"><span class=\"ws\">    </span># F_values_global = np.array(F_values)</pre>\n<pre class=\"line before\"><span class=\"ws\">    </span># SLIDER VALUES GETS PASSED TO THE MODEL TO COMPUTE THE MODEL RESULTS (e.g., y_t = stocks over time)</pre>\n<pre class=\"line current\"><span class=\"ws\">    </span>t_all, y_t, num_d, pos_neg_HO, probs = calc_y(S_values,FP_values,B_values,C_values,P_values)</pre>\n<pre class=\"line after\"><span class=\"ws\">    </span># num_deliver_home, num_deliver_2, num_deliver_4, num_deliver_total, L2_D_Capacity, L4_D_Capacity = num_d</pre>\n<pre class=\"line after\"><span class=\"ws\"></span> </pre>\n<pre class=\"line after\"><span class=\"ws\">    </span>k_range_1B  = range(0,4)</pre>\n<pre class=\"line after\"><span class=\"ws\">    </span>k_range_1C  = range(4,8)</pre>\n<pre class=\"line after\"><span class=\"ws\">    </span>k_range_2A  = range(8,len(S_label))</pre></div>\n</div>\n\n<li><div class=\"frame\" id=\"frame-140665016208448\">\n  <h4>File <cite class=\"filename\">\"/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Dash_ODE_SDR_simple.py\"</cite>,\n      line <em class=\"line\">339</em>,\n      in <code class=\"function\">calc_y</code></h4>\n  <div class=\"source \"><pre class=\"line before\"><span class=\"ws\"></span> </pre>\n<pre class=\"line before\"><span class=\"ws\">        </span>L2_deliveries = 0</pre>\n<pre class=\"line before\"><span class=\"ws\">        </span>for mother in mothers:</pre>\n<pre class=\"line before\"><span class=\"ws\"></span> </pre>\n<pre class=\"line before\"><span class=\"ws\">            </span>L2_net_capacity = 1 - (L2_deliveries + 0) / L2_D_Capacity[t] # add 1 to see if one more can be delivered</pre>\n<pre class=\"line current\"><span class=\"ws\">            </span>mother.increase_age(l4_quality_avg, l2_quality_avg, L2_4_health_outcomes_avg, L2_net_capacity, mothers, t)</pre>\n<pre class=\"line after\"><span class=\"ws\">            </span>if mother.delivered:</pre>\n<pre class=\"line after\"><span class=\"ws\">                </span>L2_deliveries += 1</pre>\n<pre class=\"line after\"><span class=\"ws\">                </span>mother.delivered = False  # reset</pre>\n<pre class=\"line after\"><span class=\"ws\">            </span># mother.increase_age(quality, proximity)</pre>\n<pre class=\"line after\"><span class=\"ws\">            </span>gest_age.append(mother._gest_age) # done</pre></div>\n</div>\n\n<li><div class=\"frame\" id=\"frame-140665016208160\">\n  <h4>File <cite class=\"filename\">\"/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Mother.py\"</cite>,\n      line <em class=\"line\">107</em>,\n      in <code class=\"function\">increase_age</code></h4>\n  <div class=\"source \"><pre class=\"line before\"><span class=\"ws\">    </span>def increase_age(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity, mothers, ts):</pre>\n<pre class=\"line before\"><span class=\"ws\">        </span>&quot;&quot;&quot;increase gestational age (step)&quot;&quot;&quot;</pre>\n<pre class=\"line before\"><span class=\"ws\">        </span>if self.flag_network and ts == 0:</pre>\n<pre class=\"line before\"><span class=\"ws\">            </span>self.build_Net(mothers)</pre>\n<pre class=\"line before\"><span class=\"ws\">        </span>self._gest_age = self._gest_age + 1</pre>\n<pre class=\"line current\"><span class=\"ws\">        </span>self.update_predisp()</pre>\n<pre class=\"line after\"><span class=\"ws\">        </span>if self._gest_age == self._time_CHV:</pre>\n<pre class=\"line after\"><span class=\"ws\">            </span>self.see_CHV()</pre>\n<pre class=\"line after\"><span class=\"ws\">        </span>elif self._gest_age == 9:</pre>\n<pre class=\"line after\"><span class=\"ws\">            </span>self.choose_delivery(l4_quality, l2_quality, health_outcomes, L2_net_capacity)</pre>\n<pre class=\"line after\"><span class=\"ws\">            </span>self.deliver()</pre></div>\n</div>\n\n<li><div class=\"frame\" id=\"frame-140665016208064\">\n  <h4>File <cite class=\"filename\">\"/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Mother.py\"</cite>,\n      line <em class=\"line\">54</em>,\n      in <code class=\"function\">update_predisp</code></h4>\n  <div class=\"source \"><pre class=\"line before\"><span class=\"ws\">            </span>mothers[mother]._l4.append(int((self._facility == 2) and (self._delivery == 1)))</pre>\n<pre class=\"line before\"><span class=\"ws\">            </span>mothers[mother]._l2.append(int((self._facility == 1) and (self._delivery == 1)))</pre>\n<pre class=\"line before\"><span class=\"ws\">            </span>mothers[mother]._l2.append(int((self._facility == 0) and (self._delivery == 1)))</pre>\n<pre class=\"line before\"><span class=\"ws\"></span> </pre>\n<pre class=\"line before\"><span class=\"ws\">    </span>def update_predisp(self):</pre>\n<pre class=\"line current\"><span class=\"ws\">        </span>self._L4_Q_Predisp = np.sum(self._l4)/len(self._l4)</pre>\n<pre class=\"line after\"><span class=\"ws\">        </span>self._Predisp_L2_L4 = np.sum(self._l2)/len(self._l2)</pre>\n<pre class=\"line after\"><span class=\"ws\"></span> </pre>\n<pre class=\"line after\"><span class=\"ws\">    </span>def see_CHV(self):</pre>\n<pre class=\"line after\"><span class=\"ws\">        </span>if (np.random.binomial(1, 0.2, 1) == 1) and (self._CHV == 0):</pre>\n<pre class=\"line after\"><span class=\"ws\">            </span>self._CHV == 1</pre></div>\n</div>\n</ul>\n  <blockquote>AttributeError: &#x27;Mother_simplified&#x27; object has no attribute &#x27;_l4&#x27;</blockquote>\n</div>\n\n<div class=\"plain\">\n    <p>\n      This is the Copy/Paste friendly version of the traceback.\n    </p>\n    <textarea cols=\"50\" rows=\"10\" name=\"code\" readonly>Traceback (most recent call last):\n  File &quot;/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Dash_ODE_SDR_simple.py&quot;, line 568, in update_graph\n    t_all, y_t, num_d, pos_neg_HO, probs = calc_y(S_values,FP_values,B_values,C_values,P_values)\n  File &quot;/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Dash_ODE_SDR_simple.py&quot;, line 339, in calc_y\n    mother.increase_age(l4_quality_avg, l2_quality_avg, L2_4_health_outcomes_avg, L2_net_capacity, mothers, t)\n  File &quot;/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Mother.py&quot;, line 107, in increase_age\n    self.update_predisp()\n  File &quot;/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Mother.py&quot;, line 54, in update_predisp\n    self._L4_Q_Predisp = np.sum(self._l4)/len(self._l4)\nAttributeError: &#x27;Mother_simplified&#x27; object has no attribute &#x27;_l4&#x27;</textarea>\n</div>\n<div class=\"explanation\">\n  The debugger caught an exception in your WSGI application.  You can now\n  look at the traceback which led to the error.  <span class=\"nojavascript\">\n  If you enable JavaScript you can also use additional features such as code\n  execution (if the evalex feature is enabled), automatic pasting of the\n  exceptions and much more.</span>\n</div>\n      <div class=\"footer\">\n        Brought to you by <strong class=\"arthur\">DON'T PANIC</strong>, your\n        friendly Werkzeug powered traceback interpreter.\n      </div>\n    </div>\n\n    <div class=\"pin-prompt\">\n      <div class=\"inner\">\n        <h3>Console Locked</h3>\n        <p>\n          The console is locked and needs to be unlocked by entering the PIN.\n          You can find the PIN printed out on the standard output of your\n          shell that runs the server.\n        <form>\n          <p>PIN:\n            <input type=text name=pin size=14>\n            <input type=submit name=btn value=\"Confirm Pin\">\n        </form>\n      </div>\n    </div>\n  </body>\n</html>\n\n<!--\n\nTraceback (most recent call last):\n  File \"/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Dash_ODE_SDR_simple.py\", line 568, in update_graph\n    t_all, y_t, num_d, pos_neg_HO, probs = calc_y(S_values,FP_values,B_values,C_values,P_values)\n  File \"/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Dash_ODE_SDR_simple.py\", line 339, in calc_y\n    mother.increase_age(l4_quality_avg, l2_quality_avg, L2_4_health_outcomes_avg, L2_net_capacity, mothers, t)\n  File \"/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Mother.py\", line 107, in increase_age\n    self.update_predisp()\n  File \"/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Mother.py\", line 54, in update_predisp\n    self._L4_Q_Predisp = np.sum(self._l4)/len(self._l4)\nAttributeError: 'Mother_simplified' object has no attribute '_l4'\n\n-->\n
+"<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+  "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <title>ValueError: setting an array element with a sequence. // Werkzeug Debugger</title>
+    <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css"
+        type="text/css">
+    <!-- We need to make sure this has a favicon so that the debugger does
+         not accidentally trigger a request to /favicon.ico which might
+         change the application's state. -->
+    <link rel="shortcut icon"
+        href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">
+    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
+    <script type="text/javascript">
+      var TRACEBACK = 140589323702176,
+          CONSOLE_MODE = false,
+          EVALEX = false,
+          EVALEX_TRUSTED = true,
+          SECRET = "None";
+    </script>
+  </head>
+  <body style="background-color: #fff">
+    <div class="debugger">
+<h1>ValueError</h1>
+<div class="detail">
+  <p class="errormsg">ValueError: setting an array element with a sequence.</p>
+</div>
+<h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
+<div class="traceback">
+  <h3></h3>
+  <ul>
+<li><div class="exc-divider">The above exception was the direct cause of the following exception:</div>
+<li><div class="frame" id="frame-140589323704192">
+  <h4>File <cite class="filename">"/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Dash_ODE_SDR_simple.py"</cite>,
+      line <em class="line">395</em>,
+      in <code class="function">calc_y</code></h4>
+  <div class="source "><pre class="line before"><span class="ws">        </span>for k in range(3):</pre>
+<pre class="line before"><span class="ws">            </span>if deliveries_t[k] &gt; 0:</pre>
+<pre class="line before"><span class="ws">                </span>neg_health_outcomes[k] = neg_HO_t[k] / deliveries_t[k]</pre>
+<pre class="line before"><span class="ws">            </span>else:</pre>
+<pre class="line before"><span class="ws">                </span>neg_health_outcomes[k] = 0</pre>
+<pre class="line current"><span class="ws">            </span>L_health_outcomes[k] = 1 - neg_health_outcomes</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">        </span>P_D[t+1]   = L2_4_health_outcomes</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">        </span>prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0 = \</pre>
+<pre class="line after"><span class="ws">            </span>get_prob_logit_health(B, l4_quality, l2_quality, neg_health_outcomes, B[&#x27;Health_const_0&#x27;])</pre></div>
+</div>
+</ul>
+  <blockquote>ValueError: setting an array element with a sequence.</blockquote>
+</div>
+
+<div class="plain">
+    <p>
+      This is the Copy/Paste friendly version of the traceback.
+    </p>
+    <textarea cols="50" rows="10" name="code" readonly>Traceback (most recent call last):
+TypeError: only size-1 arrays can be converted to Python scalars
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File &quot;/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Dash_ODE_SDR_simple.py&quot;, line 395, in calc_y
+    L_health_outcomes[k] = 1 - neg_health_outcomes
+ValueError: setting an array element with a sequence.</textarea>
+</div>
+<div class="explanation">
+  The debugger caught an exception in your WSGI application.  You can now
+  look at the traceback which led to the error.  <span class="nojavascript">
+  If you enable JavaScript you can also use additional features such as code
+  execution (if the evalex feature is enabled), automatic pasting of the
+  exceptions and much more.</span>
+</div>
+      <div class="footer">
+        Brought to you by <strong class="arthur">DON'T PANIC</strong>, your
+        friendly Werkzeug powered traceback interpreter.
+      </div>
+    </div>
+
+    <div class="pin-prompt">
+      <div class="inner">
+        <h3>Console Locked</h3>
+        <p>
+          The console is locked and needs to be unlocked by entering the PIN.
+          You can find the PIN printed out on the standard output of your
+          shell that runs the server.
+        <form>
+          <p>PIN:
+            <input type=text name=pin size=14>
+            <input type=submit name=btn value="Confirm Pin">
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
+
+<!--
+
+Traceback (most recent call last):
+TypeError: only size-1 arrays can be converted to Python scalars
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/ti/Sites/GitHub/Dash_websites/Dash_USAID/Dash_ODE_SDR_simple.py", line 395, in calc_y
+    L_health_outcomes[k] = 1 - neg_health_outcomes
+ValueError: setting an array element with a sequence.
+
+-->
