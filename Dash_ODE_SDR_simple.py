@@ -351,10 +351,13 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
                 mother.delivered = False  # reset
             # mother.increase_age(quality, proximity)
             gest_age.append(mother._gest_age) # done
-            health.append(float(mother._health)) # done
-            prob_delivery.append([logistic(mother.logit_health)]) # probability of healthy delivery
-            delivery.append(mother._delivery)
             facility.append(mother._facility)
+            health.append(float(mother._health)) # done
+            prob_delivery.append([logistic(mother.logit_health) * (mother._gest_age == 9)]) # probability of healthy delivery
+            if mother._gest_age == 9:
+                delivery.append(1)
+            else:
+                delivery.append(0)
 
         gest_age_t[t+1] = gest_age
         health_t[t+1]   = health
@@ -379,11 +382,13 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
             # pos_HO[t+1,k] = sum((del_t1 ==  1) & (fac_t1 == k)) - sum((del_t ==  1) & (fac_t == k))
             # neg_HO[t+1,k] = sum((del_t1 == -1) & (fac_t1 == k)) - sum((del_t == -1) & (fac_t == k))
             pos_HO[t+1,k] = B['Population_factor'] * \
-                            sum(   prob_del_t1  * np.array(fac_t1 == k).reshape(no_mothers,1)) - \
-                            sum(   prob_del_t   * np.array(fac_t == k).reshape(no_mothers,1))
+                            sum(   prob_del_t1  * (np.array(fac_t1 == k).reshape(no_mothers,1)*1 - np.array(fac_t == k).reshape(no_mothers,1)*1))
+                            # sum(   prob_del_t1  * np.array(fac_t1 == k).reshape(no_mothers,1)) - \
+                            # sum(   prob_del_t   * np.array(fac_t  == k).reshape(no_mothers,1))
             neg_HO[t+1,k] = B['Population_factor'] * \
-                            sum((1-prob_del_t1) * np.array(fac_t1 == k).reshape(no_mothers,1)) - \
-                            sum((1-prob_del_t) * np.array(fac_t == k).reshape(no_mothers,1))
+                            sum((1-prob_del_t1) * (np.array(fac_t1 == k).reshape(no_mothers,1)*1 - np.array(fac_t == k).reshape(no_mothers,1)*1))
+                            # sum((1-prob_del_t1) * np.array(fac_t1 == k).reshape(no_mothers,1)) - \
+                            # sum((1-prob_del_t ) * np.array(fac_t  == k).reshape(no_mothers,1))
 
         pos_HO[t+1,3] = sum(pos_HO[t+1,:3]) # totals
         neg_HO[t+1,3] = sum(neg_HO[t+1,:3])
