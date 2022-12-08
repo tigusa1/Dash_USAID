@@ -148,14 +148,12 @@ class Mother_simplified:
 
         self._health = logistic(self.logit_health)
 
-def get_prob_logit_health(B, l4_quality, l2_quality, health_outcomes, logit_initial):
-    # Health_const_0 = B['Health_const_0']
-    # Health_slope_0 = B['Health_slope_0']
-
+def get_prob_logit_health(B, l4_quality, l2_quality, neg_health_outcomes, logit_initial):
+    # neg_health_outcomes[k], k = 0 (home), 1 (L2), 2 (L4)
     Health_outcomes__Predisp = B['Health_outcomes__Predisp']
-    L4_Q__Predisp = B['L4_Q__Predisp']
+    L_Q__Predisp = B['L_Q__Predisp']
 
-    Predisp_L2_L4 = B['Predisp_L2_L4']  # 1
+    Predisp_L2_nL4 = B['Predisp_L2_nL4']  # 1
     Q_Health_multiplier = B['Q_Health_multiplier']  # 6
     Q_Health_L4_constant = B['Q_Health_L4_constant']  # 1.5
     Q_Health_L4_L2_difference = B['Q_Health_L4_L2_difference']  # 1
@@ -164,15 +162,15 @@ def get_prob_logit_health(B, l4_quality, l2_quality, health_outcomes, logit_init
 
     Initial_Negative_Predisp = B['Initial_Negative_Predisp']  # 0
 
-    logit_predisp_l4 = L4_Q__Predisp * l4_quality \
-                       + Health_outcomes__Predisp * health_outcomes \
+    logit_predisp_l4 = L_Q__Predisp * l4_quality \
+                       + Health_outcomes__Predisp * neg_health_outcomes[2] \
                        - Initial_Negative_Predisp
-    logit_predisp_l2_l4 = logit_predisp_l4 + Predisp_L2_L4
+    logit_predisp_l2_nl4 = L_Q__Predisp * l2_quality \
+                       + Health_outcomes__Predisp * neg_health_outcomes[1] \
+                       - Initial_Negative_Predisp + Predisp_L2_nL4
 
     prob_l4 = logistic([logit_predisp_l4 - 2])
-    prob_l2 = logistic([logit_predisp_l2_l4 - 2])
-
-    # logit_health_BL    = Health_const_0 + Health_slope_0 * (np.random.uniform(-1, 1, 1)) # not used for initialization
+    prob_l2_nl4 = logistic([logit_predisp_l2_nl4 - 2])
 
     logit_health_l4    = logit_initial + Q_Health_multiplier * (l4_quality - 1 / 2) + Q_Health_L4_constant
     logit_health_l2    = logit_initial + Q_Health_multiplier * (l2_quality - 1 / 2) + \
@@ -181,7 +179,7 @@ def get_prob_logit_health(B, l4_quality, l2_quality, health_outcomes, logit_init
                                      Q_Health_L4_constant - Q_Health_L4_referral_difference
     logit_health_l0    = logit_initial - Q_Health_Home_negative
 
-    return prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0
+    return prob_l4, prob_l2_nl4, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0
 
 class Mother:
     def __init__(self, wealth, education, age, no_children, max_gest_age, B):
