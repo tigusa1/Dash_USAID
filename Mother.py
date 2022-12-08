@@ -19,14 +19,11 @@ class Mother_simplified:
         if self.flag_network:
             self.network_distance = 0.05
             self.network_influence = 0.5
-            self.CHV_weight = 0.3
+            self.CHV_weight = 0.3 # slider
             self.Rec_weight = 0.2
-            self.CHV_likelihood = 0.0895
+            self.CHV_likelihood = 0.0895 # slider
 
             self._network = []
-
-            self.network_distance = 0.05
-            self.network_influence = 0.5
 
             self._id = unique_id
             self._SES = df['wealth'][unique_id]
