@@ -168,6 +168,7 @@ def get_prob_logit_health(B, l4_quality, l2_quality, neg_health_outcomes, logit_
     logit_predisp_l4 = L_Q__Predisp * l4_quality \
                        + Health_outcomes__Predisp * neg_health_outcomes[2] \
                        - Initial_Negative_Predisp
+    # predisposition of L2 given not L4
     logit_predisp_l2_nl4 = L_Q__Predisp * l2_quality \
                        + Health_outcomes__Predisp * neg_health_outcomes[1] \
                        - Initial_Negative_Predisp + Predisp_L2_nL4
@@ -178,6 +179,7 @@ def get_prob_logit_health(B, l4_quality, l2_quality, neg_health_outcomes, logit_
     logit_health_l4    = logit_initial + Q_Health_multiplier * (l4_quality - 1 / 2) + Q_Health_L4_constant
     logit_health_l2    = logit_initial + Q_Health_multiplier * (l2_quality - 1 / 2) + \
                                      Q_Health_L4_constant - Q_Health_L4_L2_difference
+    # prob healthy delivery if transferred from L2 to L4
     logit_health_l4_l2 = logit_initial + Q_Health_multiplier * (l4_quality - 1 / 2) + \
                                      Q_Health_L4_constant - Q_Health_L4_referral_difference
     logit_health_l0    = logit_initial - Q_Health_Home_negative
