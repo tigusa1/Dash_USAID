@@ -115,6 +115,8 @@ FP_combination_names, FP_combination_0, _, FP_combination_label, FP_combination_
 B_info = [
     # ['Health_outcomes__Predisp', 3.2, 'Health outcome -> Predisp hospital', 0.0], #
     ['BL_Capacity_factor',        20, 'BL Capacity Factor'                , 20 ],
+    ['Population_factor',       1, 'Population Factor'                 , None], # 1000?
+    ['Outcomes_factor',          1, 'Outcomes Factor'                   , None], # 100?
     ['Initial_Negative_Predisp',   2, 'Initial Negative Predisp'          , None],
     ['Health_outcomes__Predisp', 3.2, 'Health outcome -> Predisp hospital', 1.0], #
     ['L_Q__Predisp',             0.5, 'L quality -> Predisp facility'     , 0.2],
@@ -219,11 +221,16 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
     beta  = parameters['beta']
     y_t   = np.zeros((nt,len(S_values)))
     t_all = np.zeros(nt)
-    anc_t, health_t, gest_age_t, deliveries, facilities = {0:[0]}, {0:[0]}, {0:[0]}, {0:[0]}, {0:[0]}
+    anc_t, health_t, gest_age_t, deliveries = {0:[0]}, {0:[0]}, {0:[0]}, {0:[0]}
     # anc_t, health_t, gest_age_t, deliveries, facilities = [[]]*nt, [[]]*nt, [[]]*nt, [[]]*nt, [[]]*nt # NG
     num_deliver, num_deliver_avg, neg_HO_avg = np.zeros((nt,4)), np.zeros((nt,4)), np.zeros((nt,4))
     pos_HO, neg_HO, L2_D_Capacity, L4_D_Capacity = np.zeros([nt,4]), np.zeros([nt,4]), np.ones(nt), np.ones(nt)
     probs = np.ones((nt, 10))
+    n_zeros = []
+    for i in range(no_mothers):
+        n_zeros.append([np.array(0)])
+
+    prob_deliveries, facilities = {0:n_zeros}, {0:n_zeros}
 
     for i in range(len(S_values)):
         y_t[0,i] = S_values[i]
@@ -277,7 +284,7 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
                 globals()[name] = C_original[idx] # use the HARD-CODED value for the F-parameter saved in F_info
 
         t_all[t+1] = t_all[t] + 1 # increment by month
-        gest_age, health, anc, delivery, facility = [], [], [], [], []
+        gest_age, health, anc, delivery, prob_delivery, facility = [], [], [], [], [], []
         for mother in mothers:
             mother.set_B(B) # change in B as set in B_change
 
@@ -345,25 +352,39 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
             # mother.increase_age(quality, proximity)
             gest_age.append(mother._gest_age) # done
             health.append(float(mother._health)) # done
+            prob_delivery.append([logistic(mother.logit_health)]) # probability of healthy delivery
             delivery.append(mother._delivery)
             facility.append(mother._facility)
 
         gest_age_t[t+1] = gest_age
         health_t[t+1]   = health
         deliveries[t+1] = delivery # dictionary with integer keys, can access using [idx] for idx>0
+        prob_deliveries[t+1] = prob_delivery
         facilities[t+1] = facility
 
         fac_t1 = np.array(facilities[t+1])
         fac_t  = np.array(facilities[t])
         for k in range(3):
-            num_deliver[t+1,k]  = sum(fac_t1 == k) - sum(fac_t == k)
+            # num_deliver[t+1,k]  = sum(fac_t1 == k) - sum(fac_t == k)
+            num_deliver[t+1,k]  = B['Population_factor'] * (sum(fac_t1 == k) - sum(fac_t == k))
+
         num_deliver[t+1,3]  = np.sum(num_deliver[t+1,:]) # initialized to zero
 
         del_t1 = np.array(deliveries[t+1])
         del_t  = np.array(deliveries[t])
+        prob_del_t1 = np.array(prob_deliveries[t+1]) / B['Outcomes_factor']
+        prob_del_t  = np.array(prob_deliveries[t])   / B['Outcomes_factor']
+
         for k in range(3): # fac_t = 0 (home), 1 (L2), 2 (L4)
-            pos_HO[t+1,k] = sum((del_t1 ==  1) & (fac_t1 == k)) - sum((del_t ==  1) & (fac_t == k))
-            neg_HO[t+1,k] = sum((del_t1 == -1) & (fac_t1 == k)) - sum((del_t == -1) & (fac_t == k))
+            # pos_HO[t+1,k] = sum((del_t1 ==  1) & (fac_t1 == k)) - sum((del_t ==  1) & (fac_t == k))
+            # neg_HO[t+1,k] = sum((del_t1 == -1) & (fac_t1 == k)) - sum((del_t == -1) & (fac_t == k))
+            pos_HO[t+1,k] = B['Population_factor'] * \
+                            sum(   prob_del_t1  * np.array(fac_t1 == k).reshape(no_mothers,1)) - \
+                            sum(   prob_del_t   * np.array(fac_t == k).reshape(no_mothers,1))
+            neg_HO[t+1,k] = B['Population_factor'] * \
+                            sum((1-prob_del_t1) * np.array(fac_t1 == k).reshape(no_mothers,1)) - \
+                            sum((1-prob_del_t) * np.array(fac_t == k).reshape(no_mothers,1))
+
         pos_HO[t+1,3] = sum(pos_HO[t+1,:3]) # totals
         neg_HO[t+1,3] = sum(neg_HO[t+1,:3])
 
