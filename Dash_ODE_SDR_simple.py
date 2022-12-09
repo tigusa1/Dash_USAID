@@ -449,11 +449,15 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
                                 logistic(logit_health_l4_l2), logistic(logit_health_l0)]),
                             [ L_health_outcomes[2], L_health_outcomes[1], L_health_outcomes[0] ]) # plot order
 
+        # SMO
+        near_miss_factor, DALY_fatalities, DALY_near_miss = 1.6, 40, 25
+        num_near_miss_avg = neg_HO_avg * near_miss_factor
+        DALY = neg_HO_avg * DALY_fatalities + num_near_miss_avg * DALY_near_miss
     return t_all, y_t, \
            [ num_deliver_avg[:,2], num_deliver_avg[:,1], num_deliver_avg[:,0], num_deliver_avg[:,3],
              L4_D_Capacity * B['Population_factor'], L2_D_Capacity * B['Population_factor'],
              L2_ANC_Capacity * B['Population_factor'], num_ANC_avg[:,0] ],\
-           [ pos_HO, neg_HO_avg ], probs # pos_HO not used
+           [ pos_HO, neg_HO_avg ], probs, [num_near_miss_avg, DALY] # pos_HO not used
 
 # DASHBOARD
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -521,6 +525,11 @@ app.layout = html.Div(style={'backgroundColor':'#f6fbfc'}, children=[
             dbc.Col([html.H5('Positive Factors', style={'fontSize':fsize, 'color':fcolor}),FP_sliders],width=12),
         ], width=3)
     ],className="pretty_container"),
+    dbc.Row([
+        dbc.Col([
+            dcc.Graph(id='plot_3a_SMO', config={'displayModeBar': False})
+        ], width=3),
+    ], className="pretty_container"),
 
     dbc.Row([
         dbc.Col(html.H5('Beta coefficients', style={'fontSize':fsize, 'color':fcolor}),width=12),
@@ -604,6 +613,7 @@ def update_combination_slider(FP_combination_values, FP_values, FP_max, FP_style
     dash.dependencies.Output('plot_2a', 'figure'),
     dash.dependencies.Output('plot_2b', 'figure'),
     dash.dependencies.Output('plot_2c', 'figure'),
+    dash.dependencies.Output('plot_3a_SMO', 'figure'),
     # each row is passed to update_graph (update the dashboard) as a separate argument in the same
     [Input({'type':'S_slider','index':ALL}, 'value'), # get all S-slider values, pass as 1st argument to update_graph()
      Input({'type':'FP_slider','index':ALL}, 'value'),
@@ -616,13 +626,13 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
     # S_values_global = np.array(S_values) # used for sensitivities
     # F_values_global = np.array(F_values)
     # SLIDER VALUES GETS PASSED TO THE MODEL TO COMPUTE THE MODEL RESULTS (e.g., y_t = stocks over time)
-    t_all, y_t, num_d, pos_neg_HO, probs = calc_y(S_values,FP_values,B_values,C_values,P_values)
+    t_all, y_t, num_d, pos_neg_HO, probs, SMO = calc_y(S_values,FP_values,B_values,C_values,P_values)
     # num_deliver_home, num_deliver_2, num_deliver_4, num_deliver_total, L2_D_Capacity, L4_D_Capacity = num_d
 
     k_range_1B  = range(0,4)
     k_range_1C  = range(4,8)
     k_range_2A  = range(8,len(S_label))
-    def y_max_t(k_range, y, increments=5):
+    def y_max_t(k_range, y, increments=5): # used for y-axis
         if isinstance(y,list):
             max_y = 0
             for k in k_range:
@@ -711,17 +721,18 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
     labels     = ['Level 4/5','Level 2/3','Home','Total','Capacity 4/5','Capacity 2/3','ANC capacity','ANC visits'] # total is unused
     line_color = [0, 1, 2, 5, 0, 1, 5, 5]
     line_dash  = ['none', 'none', 'none', 'dash', 'dash', 'dash', 'dash', 'none' ]
+    k_plot = [0,1,2,4,5,3,6,7]
     fig_2B = {
         'data':[{
             'x': t_all[2:],
             'y': num_d[k][2:],
             'name': labels[k],
             'line': {'color': colors[line_color[k]], 'dash': line_dash[k]},
-        } for k in [0,1,2,4,5,3,6,7]], # don't need total, so just the first three
+        } for k in k_plot], # don't need total, so just the first three
         'layout': {
             'title': {'text' : 'Deliveries over time', 'font' : {'color' : fcolor, 'size' : fsize}},
             'xaxis': {'range':[0,nt], 'title':'Time (months)'},
-            'yaxis': {'range':[0,y_max_t([0,1,2,4,5], num_d)], 'title':'Deliveries'}
+            'yaxis': {'range':[0,y_max_t(k_plot, num_d)], 'title':'Deliveries'}
         }
     }
 
@@ -729,21 +740,42 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
     labels     = ['Home','L2', 'L4', 'Total']
     line_color = [2, 1, 0, 4]
     line_dash  = ['none', 'none', 'none', 'dash']
+    k_plot     = [2,1,0,3]
     fig_2C = {
         'data':[{
             'x': t_all[2:],
             'y': pos_neg_HO[1][2:,k],
             'name': labels[k],
             'line': {'color': colors[line_color[k]], 'dash': line_dash[k]},
-        } for k in [2,1,0,3]],
+        } for k in k_plot],
         'layout': {
             'title': {'text' : 'Negative birth outcomes', 'font' : {'color' : fcolor, 'size' : fsize}},
             'xaxis':{'range':[0,nt], 'title':'Time (months)'},
-            'yaxis':{'range':[0,y_max_t([2,1,0,3], pos_neg_HO[1])], 'title':'Number of dyads'}
+            'yaxis':{'range':[0,y_max_t(k_plot, pos_neg_HO[1])], 'title':'Number of dyads'}
         }
     }
 
-    return fig_1A, fig_1B, fig_1C, fig_2A, fig_2B, fig_2C
+    # SMO
+    NM_DALY    = np.concatenate((SMO[0],SMO[1]))
+    labels     = ['Home near miss','L2 near miss','L4 near miss','Home DALY','L2 DALY','L4 DALY']
+    line_color = [2, 1, 0, 2, 1, 0]
+    line_dash  = ['dash', 'dash', 'dash', 'none', 'none', 'none']
+    k_plot     = [2,1,0,5,4,3]
+    fig_3A_SMO = { # row 3 column A of figures
+        'data':[{
+            'x': t_all[2:],
+            'y': NM_DALY[2:,k],
+            'name': labels[k],
+            'line': {'color': colors[line_color[k]], 'dash': line_dash[k]},
+        } for k in k_plot],
+        'layout': {
+            'title': {'text' : 'SMO', 'font' : {'color' : fcolor, 'size' : fsize}},
+            'xaxis':{'range':[0,nt], 'title':'Time (months)'},
+            'yaxis':{'range':[0,y_max_t(k_plot, NM_DALY)], 'title':'SMO'}
+        }
+    }
+
+    return fig_1A, fig_1B, fig_1C, fig_2A, fig_2B, fig_2C, fig_3A_SMO
 
 # CAN LEAVE IN FOR PYTHONEVERYWHERE
 if __name__ == '__main__':
