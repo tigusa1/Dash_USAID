@@ -196,7 +196,7 @@ FN_combination_names, FN_combination_0, FN_combination_label, FN_combination_idx
     set_variables(FN_combination_info)
 
 B_info = [
-    ['BL_Capacity_factor',        20, 'BL_Capacity_Factor'                ],
+    ['L_Capacity_factor',        20, 'BL_Capacity_Factor'                ],
     ['Initial_Negative_Predisp', 2, 'Initial_Negative_Predisp'],
     ['Health_outcomes__Predisp', 2.4, 'Health outcome -> Predisp hospital'],
     ['L4_Q__Predisp',            0.5, 'L4/5 quality -> Predisp hospital'  ],

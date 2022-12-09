@@ -13,8 +13,15 @@ class Mother_simplified:
         self._delivery = None
         self._facility = None
         self.delivered = False  # needed to count the number of deliveries per month
+        self.ANC_visited = False
+        self._anc        = 0
 
-        self.flag_network = True
+        Predisp_ANC_const_0 = B['Predisp_ANC_const_0']
+        Predisp_ANC_slope_0 = B['Predisp_ANC_slope_0']
+
+        self._predisp_ANC = Predisp_ANC_const_0 + Predisp_ANC_slope_0 * (np.random.uniform(-1, 1, 1))
+
+        self.flag_network = False
 
         if self.flag_network:
             self.network_distance = 0.05
@@ -39,6 +46,13 @@ class Mother_simplified:
             self._CHV = 0
 
         self.B = B
+
+    def visit_anc(self):
+        """go to ANC if predisposition for it, changes health"""
+        if self._predisp_ANC > np.random.uniform(0, 1, 1):
+            self.logit_health += self.B['ANC_effect']
+            self._anc += 1
+            self.ANC_visited = True
 
     def set_B(self, B):
         # used in calc_y at every time step to allow for updates in B
@@ -116,7 +130,7 @@ class Mother_simplified:
             else:
                 mothers[mother]._l2.append(-1)
 
-    def increase_age(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity, mothers, ts):
+    def increase_age(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity, ANC_net_capacity, mothers, ts):
         """increase gestational age (step)"""
         self._gest_age = self._gest_age + 1
 
@@ -129,7 +143,10 @@ class Mother_simplified:
 
             self.update_predisp()
 
-        if self._gest_age == 9:
+        if (self._gest_age > 0) & (self._gest_age < 9):
+            if ANC_net_capacity > 0:
+                self.visit_anc()
+        elif self._gest_age == 9:
             self.choose_delivery(l4_quality, l2_quality, health_outcomes, L2_net_capacity)
             self.deliver()
             if self.flag_network:

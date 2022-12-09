@@ -114,13 +114,17 @@ FP_combination_names, FP_combination_0, _, FP_combination_label, FP_combination_
 
 B_info = [
     # ['Health_outcomes__Predisp', 3.2, 'Health outcome -> Predisp hospital', 0.0], #
-    ['BL_Capacity_factor',        20, 'BL Capacity Factor'                , 20 ],
+    ['L_Capacity_factor',         20, 'L Capacity Factor'                , 20 ],
+    ['ANC_Capacity_factor',       60, 'ANC Capacity Factor'              , None ],
     ['Population_factor',         50, 'Population Factor'                 , None], # 1000?
     ['Outcomes_factor',           20, 'Outcomes Factor'                   , None], # 100?
     ['Initial_Negative_Predisp',   2, 'Initial Negative Predisp'          , None],
     ['Health_outcomes__Predisp', 3.2, 'Health outcome -> Predisp hospital', 1.0], #
     ['L_Q__Predisp',             0.5, 'L quality -> Predisp facility'     , 0.2],
     ['Predisp_L2_nL4',           2.0, 'Predisp L2'                        , 1.0], # L2 given not L4
+    ['Predisp_ANC_const_0',      0.5, 'Predisp ANC const 0'               , None],
+    ['Predisp_ANC_slope_0',      0.5, 'Predisp ANC slope 0'               , None],
+    ['ANC_effect',               1.5, 'ANC effect on health'              , None],
     ['Health_const_0',           0.8, 'Initial Health (do not change)'    , None], #
     ['Health_slope_0',           0.2, 'Variability Initial Health (do not change)', None],#
     ['Q_Health_multiplier',              4., 'Q Health Effect'                    , None], #
@@ -240,7 +244,8 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
     t_all = np.zeros(nt)
     anc_t, health_t, gest_age_t, deliveries = {0:[0]}, {0:[0]}, {0:[0]}, {0:[0]}
     num_deliver, num_deliver_avg, neg_HO_avg = np.zeros((nt,4)), np.zeros((nt,4)), np.zeros((nt,4))
-    pos_HO, neg_HO, L2_D_Capacity, L4_D_Capacity = np.zeros([nt,4]), np.zeros([nt,4]), np.ones(nt), np.ones(nt)
+    pos_HO, neg_HO, L2_D_Capacity, L4_D_Capacity, L2_ANC_Capacity, num_ANC_avg, num_ANC_visits = \
+        np.zeros([nt,4]), np.zeros([nt,4]), np.ones(nt), np.ones(nt), np.ones(nt), np.zeros([nt,1]), np.zeros([nt,1])
     probs = np.ones((nt, n_probs))
     B = {} # Use a dictionary so that we only need to pass B to the Mother class
     n_zeros = []
@@ -278,7 +283,7 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
     # LOOP OVER EVERY TIME VALUE
     for t in range(0,nt-1):
         t_all[t+1] = t_all[t] + 1 # increment by month
-        gest_age, health, anc, delivery, prob_delivery, facility = [], [], [], [], [], []
+        gest_age, health, anc_visit, delivery, prob_delivery, facility = [], [], [], [], [], []
 
         if t > parameters['t_change']: # IF TIME IS LARGER THAN THE t_change SLIDER VALUE
             for idx, name in FP_idx_names:
@@ -305,8 +310,9 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
             globals()[d_name + '_in'] = 0.0
             globals()[d_name + '_out'] = 0.0
 
-        L2_D_Capacity[t] = L2_DC[t] * BL_Capacity_factor
-        L4_D_Capacity[t] = L4_DC[t] * BL_Capacity_factor * L4_D_Capacity_Multiplier
+        L2_D_Capacity[t] = L2_DC[t] * L_Capacity_factor
+        L4_D_Capacity[t] = L4_DC[t] * L_Capacity_factor * L4_D_Capacity_Multiplier
+        L2_ANC_Capacity[t] = (1 - L2_DC[t]) * ANC_Capacity_factor
         L2_demand = logistic(num_deliver[t,1] / (L2_D_Capacity[t]))
         L4_demand = logistic(num_deliver[t,2] / (L4_D_Capacity[t]))
 
@@ -353,12 +359,13 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
         l4_quality_avg = window_average(L4_Q, t+1, time_window, linear_weights=True)
         # L2_4_health_outcomes_avg = window_average(P_D, t+1, time_window, linear_weights=True) # use neg_health_outcomes
 
-        L2_deliveries = 0
+        L2_deliveries, ANC_visits = 0, 0
         for mother in mothers:
             L2_net_capacity = 1 - (L2_deliveries + 0) / L2_D_Capacity[t] # add 1 to see if one more can be delivered
-            mother.increase_age(l4_quality_avg, l2_quality_avg, neg_health_outcomes, L2_net_capacity, mothers, t)
+            ANC_net_capacity = 1 - (ANC_visits) / L2_ANC_Capacity[t]
+            mother.increase_age(l4_quality_avg, l2_quality_avg, neg_health_outcomes, L2_net_capacity, ANC_net_capacity, mothers, t)
             if mother.delivered:
-                L2_deliveries += 1
+                L2_deliveries += (mother._facility == 1)
                 mother.delivered = False  # reset
                 delivery.append(1)
                 facility.append(mother._facility)
@@ -367,7 +374,12 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
                 delivery.append(0)
                 facility.append(-1)
                 prob_delivery.append([0])
+            if mother.ANC_visited:
+                ANC_visits += 1
+                anc_visit.append(1)
+                mother.ANC_visited = False
 
+            # pred_disp.append([mother._pre])
             gest_age.append(mother._gest_age)
             health.append(float(mother._health)) # probability healthy
 
@@ -376,6 +388,7 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
         deliveries[t+1] = delivery # dictionary with integer keys, can access using [idx] for idx>0
         prob_deliveries[t+1] = prob_delivery
         facilities[t+1] = facility
+        num_ANC_visits[t+1] = np.sum(anc_visit) * B['Population_factor']
 
         fac_t1 = np.array(facilities[t+1])
         for k in range(3):
@@ -397,16 +410,17 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
         neg_HO[t+1,3] = sum(neg_HO[t+1,:3])
 
         if t==nt-2: # last value of t, need to add to these array for plotting
-            L2_D_Capacity[t+1] = L2_DC[t+1] * BL_Capacity_factor  # need to fill in the last time value
-            L4_D_Capacity[t+1] = L4_DC[t+1] * BL_Capacity_factor * L4_D_Capacity_Multiplier
+            L2_D_Capacity[t+1] = L2_DC[t+1] * L_Capacity_factor  # need to fill in the last time value
+            L4_D_Capacity[t+1] = L4_DC[t+1] * L_Capacity_factor * L4_D_Capacity_Multiplier
 
         # HEALTH OUTCOMES ANALYSIS
         # window_average(x, t, window_duration, x0=1, x1=None, linear_weights=True)
         neg_HO_t     = window_average(neg_HO,                t+2, time_window, linear_weights=True, x1=num_deliver,
                                       x0=(1-P_D[0])/B['Outcomes_factor'])
+        neg_HO_avg[t+1,:] = neg_HO_t
         deliveries_t = window_average(num_deliver,           t+2, time_window, linear_weights=True)
         num_deliver_avg[t+1,:] = window_average(num_deliver, t+2, time_window, linear_weights=True)
-        neg_HO_avg[t+1,:] = neg_HO_t
+        num_ANC_avg[t+1,:]     = window_average(num_ANC_visits,  t+2, time_window, linear_weights=True)
 
         l2_quality = L2_Q[t+1]
         l4_quality = L4_Q[t+1]
@@ -437,7 +451,8 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
 
     return t_all, y_t, \
            [ num_deliver_avg[:,2], num_deliver_avg[:,1], num_deliver_avg[:,0], num_deliver_avg[:,3],
-             L4_D_Capacity * B['Population_factor'], L2_D_Capacity * B['Population_factor'] ],\
+             L4_D_Capacity * B['Population_factor'], L2_D_Capacity * B['Population_factor'],
+             L2_ANC_Capacity * B['Population_factor'], num_ANC_avg[:,0] ],\
            [ pos_HO, neg_HO_avg ], probs # pos_HO not used
 
 # DASHBOARD
@@ -456,7 +471,7 @@ FP_sliders = many_sliders(FP_label,'FP_slider',FP_0,FP_initial,np.zeros(len(FP_0
 FP_combination_sliders = many_sliders(FP_combination_label,'FP_combination_slider',FP_combination_0,[],
                                       np.zeros(len(FP_combination_0)),np.ones(len(FP_combination_0)),
                                       num_rows=1, num_cols=2, width=6)
-B_sliders = many_sliders(B_label,'B_slider',B_0,B_initial,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=5, num_cols=4, width=3)
+B_sliders = many_sliders(B_label,'B_slider',B_0,B_initial,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=6, num_cols=4, width=3)
 # many_sliders(labels, type used in Input() as an identifier of group of sliders, initial values, min, max, ...
 C_sliders = many_sliders(C_label,'C_slider',C_0,C_initial,np.zeros(len(C_0)),np.ones(len(C_0)), num_rows=3, num_cols=4, width=3)
 
@@ -693,16 +708,16 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
     }
 
     # DELIVERIES
-    labels     = ['Level 4/5','Level 2/3','Home','Total','Capacity 4/5','Capacity 2/3'] # total is unused
-    line_color = [0, 1, 2, 5, 0, 1]
-    line_dash  = ['none', 'none', 'none', 'dash', 'dash', 'dash' ]
+    labels     = ['Level 4/5','Level 2/3','Home','Total','Capacity 4/5','Capacity 2/3','ANC capacity','ANC visits'] # total is unused
+    line_color = [0, 1, 2, 5, 0, 1, 5, 5]
+    line_dash  = ['none', 'none', 'none', 'dash', 'dash', 'dash', 'dash', 'none' ]
     fig_2B = {
         'data':[{
             'x': t_all[2:],
             'y': num_d[k][2:],
             'name': labels[k],
             'line': {'color': colors[line_color[k]], 'dash': line_dash[k]},
-        } for k in [0,1,2,4,5]], # don't need total, so just the first three
+        } for k in [0,1,2,4,5,3,6,7]], # don't need total, so just the first three
         'layout': {
             'title': {'text' : 'Deliveries over time', 'font' : {'color' : fcolor, 'size' : fsize}},
             'xaxis': {'range':[0,nt], 'title':'Time (months)'},
