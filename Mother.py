@@ -29,15 +29,12 @@ class Mother_simplified:
             self._SES = df['wealth'][unique_id]
             self._location = df['new_lat_long'][unique_id]
 
-            predisp = np.int(np.random.randint(0,3,1)) # a random integer from 0 to 2
-            rands = np.random.uniform(0, 0.5, 1) 
-            # total probabilities for l4, l2, home should equal 1
-            self._l4 = [float(int(predisp == 2)*0.5 + rands)] # 0.5 + rands 
-            self._l2 = [float(int(predisp == 1)*0.5 + np.random.uniform(0, float(0.5-rands), 1))] # 0 + at max, 0.5-rands
-            self._home = [1-self._l4[0] - self._l2[0]] # remaining 
+            self._l4 = [B['Network_L4_Predisp']]
+            self._l2 = [B['Network_L2_Predisp']]
+            
+            self._network_l4 = self._l4[0]
+            self._network_l2 = self._l4[0]
 
-            self._L4_Q_Predisp = self._l4[0]
-            self._Predisp_L2_L4 = self._l2[0] + self._L4_Q_Predisp
             self._time_CHV = int(np.random.randint(0, 8, 1))
             self._CHV = 0
 
@@ -52,47 +49,26 @@ class Mother_simplified:
             if (self._id != idx) and (np.linalg.norm(np.array(self._location) - np.array(mother._location)) < self.network_distance) and (self._SES == mother._SES):
                 self._network.append(idx) 
 
-    def influence_Net(self, mothers): 
-        friends = int(len(self._network) * self.network_influence)
-        net = random.sample(self._network, friends)
-        for mother in net: # mother will influence her friends based off of her choice of facility and outcome
-            if (self._facility == 2) and (self._delivery == 1):
-                mothers[mother]._l4.append(1)
-            elif (self._facility == 2) and (self._delivery == -1):
-                mothers[mother]._l4.append(0)
-            elif (self._facility == 1) and (self._delivery == 1):
-                mothers[mother]._l2.append(1)
-            elif (self._facility == 1) and (self._delivery == -1):
-                mothers[mother]._l2.append(0)
-            elif (self._facility == 0) and (self._delivery == 1):
-                mothers[mother]._home.append(1)
-            else:
-                mothers[mother]._home.append(0)
-
-    def update_predisp(self): 
-        CHV_weight = self.CHV_weight # for weighting CHV greater in mother's predisposition for choice of facility
-        Rec_weight = self.Rec_weight # for weighting recent opinion greater in mothers' predisposition for choice of facility
-        if self._l4[-1] == 2: # looks for whether a CHV was seen
-            L4_predisp = (1-CHV_weight)*np.sum(self._l4[:-1])/len(self._l4) + CHV_weight*self._l4[-1]*0.5/len(self._l4)
-        else:
-            L4_predisp = (1-Rec_weight)*np.sum(self._l4[:-1])/len(self._l4) + Rec_weight*self._l4[-1]/len(self._l4)
-        L2_predisp = (1-Rec_weight)*np.sum(self._l2[:-1])/len(self._l2) + Rec_weight*self._l2[-1]/len(self._l2)
-        home = (1-Rec_weight)*np.sum(self._home[:-1])/len(self._home) + Rec_weight*self._home[-1]/len(self._home)
-
-        self._L4_Q_Predisp = float(L4_predisp/(L4_predisp + L2_predisp + home)) # percentage of her three choices 
-        self._Predisp_L2_L4 = float(L2_predisp/(L4_predisp + L2_predisp + home)) + self._L4_Q_Predisp# percentage of her three choices 
-
     def see_CHV(self): # if the mother sees a CHV, she will have additional positive influence to go to a level4/5 facility
         if (np.random.binomial(1, self.CHV_likelihood, 1) == 1) and (self._CHV == 0):
             self._CHV = 1 
             self._l4.append(2) # this serves as a mark for if a CHV was seen 
 
+    def update_predisp(self): 
+        CHV_weight = self.CHV_weight # for weighting CHV greater in mother's predisposition for choice of facility
+        Rec_weight = self.Rec_weight # for weighting recent opinion greater in mothers' predisposition for choice of facility
+        if self._l4[-1] == 2: # looks for whether a CHV was seen
+            self._network_l4 = (1-CHV_weight)*np.sum(self._l4[:-1])/len(self._l4) + CHV_weight*self._l4[-1]*0.5/len(self._l4)
+        else:
+            self._network_l4 = (1-Rec_weight)*np.sum(self._l4[:-1])/len(self._l4) + Rec_weight*self._l4[-1]/len(self._l4)
+        self._network_l2 = (1-Rec_weight)*np.sum(self._l2[:-1])/len(self._l2) + Rec_weight*self._l2[-1]/len(self._l2)
+
     def choose_delivery(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity):
         """delivery facility depending on where one goes for care and health status"""
 
         if self.flag_network:
-            self.B['L4_Q__Predisp'] = self._L4_Q_Predisp
-            self.B['Predisp_L2_L4'] = self._Predisp_L2_L4
+            self.B['Network_L4_Predisp'] = self._network_l4
+            self.B['Network_L2_Predisp'] = self._network_l2
 
         prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0 = \
             get_prob_logit_health(self.B, l4_quality, l2_quality, health_outcomes, self.logit_health)
@@ -126,6 +102,19 @@ class Mother_simplified:
             self.baby_delivery = -1
         else:
             self.baby_delivery = 1
+
+    def influence_Net(self, mothers): 
+        friends = int(len(self._network) * self.network_influence)
+        net = random.sample(self._network, friends)
+        for mother in net: # mother will influence her friends based off of her choice of facility and outcome
+            if (self._facility == 2) and (self._delivery == 1):
+                mothers[mother]._l4.append(1)
+            elif (self._facility == 2) and (self._delivery == -1):
+                mothers[mother]._l4.append(-1)
+            elif (self._facility == 1) and (self._delivery == 1):
+                mothers[mother]._l2.append(1)
+            else:
+                mothers[mother]._l2.append(-1)
 
     def increase_age(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity, mothers, ts):
         """increase gestational age (step)"""
@@ -162,13 +151,17 @@ def get_prob_logit_health(B, l4_quality, l2_quality, neg_health_outcomes, logit_
 
     Initial_Negative_Predisp = B['Initial_Negative_Predisp']  # 0
 
+    Network_L4 = B['Network_L4_Predisp']
+    Network_L2 = B['Network_L2_Predisp']
+    Network_Effect = B['Network_Effect']
+
     logit_predisp_l4 = L_Q__Predisp * l4_quality \
                        + Health_outcomes__Predisp * neg_health_outcomes[2] \
-                       - Initial_Negative_Predisp
+                       - Initial_Negative_Predisp + Network_Effect * Network_L4
     # predisposition of L2 given not L4
     logit_predisp_l2_nl4 = L_Q__Predisp * l2_quality \
                        + Health_outcomes__Predisp * neg_health_outcomes[1] \
-                       - Initial_Negative_Predisp + Predisp_L2_nL4
+                       - Initial_Negative_Predisp + Predisp_L2_nL4 + Network_Effect * Network_L2
 
     prob_l4 = logistic([logit_predisp_l4 - 2])
     prob_l2_nl4 = logistic([logit_predisp_l2_nl4 - 2])

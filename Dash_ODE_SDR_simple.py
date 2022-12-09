@@ -128,13 +128,15 @@ B_info = [
     ['Q_Health_L4_L2_difference',        1., 'Difference L4-L2 Health Effect'     , None],
     ['Q_Health_L4_referral_difference', 0.5, 'L2 -> L4 Referral Health Effect'    , None],
     ['Q_Health_Home_negative',          3.0, 'Home Delivery Health Effect'        , None], #
+    ['Network_L4_Predisp',              0.0, 'Network L4 Predisp'                 , None],
+    ['Network_L2_Predisp',              0.0, 'Network L2 Predisp'                 , None],
+    ['Network_Effect',                  1.0, 'Network Effect'                     , None],
     ['Time_delay_awareness',            2.0, 'Awareness Delay (months)'           , None], # 24
 ]
 
 B_names, B_0, B_initial, B_label, B_idx_names = set_variables(B_info)
 B_Health_const_0 = np.array(B_0)[np.array(B_names) == 'Health_const_0'][0] # set for later
 B_Health_slope_0 = np.array(B_0)[np.array(B_names) == 'Health_slope_0'][0]
-
 
 # MODEL PARAMETER INFORMATION FOR SLIDERS
 C_info = [
@@ -259,10 +261,6 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
         B[name] = B_original[idx]         # B['Health_outcomes__Predisp'] = 2.4
         globals()[name] = B_original[idx] # Need to initialize for get_prob_logit_health()
 
-    for mother in range(0, no_mothers):
-        # use B_Health_const_0 and B_Health_slope_0 which are hard-coded
-        mothers.append(Mother_simplified(nt, B, mother, df, B_Health_const_0, B_Health_slope_0))
-
     # INITIAL PROBABILITIES
     # prob_l4_0 prob of L4
     # prob_l2_0 prob of L2 given not L4
@@ -272,6 +270,10 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
     prob_l4_0, prob_l2_0, logit_health_l4_0, logit_health_l2_0, logit_health_l4_l2_0, logit_health_l0_0 = \
         get_prob_logit_health(B, L4_Q[0], L2_Q[0], neg_health_outcomes_0, B_Health_const_0)
     P_D[0] = logistic(logit_health_l0_0) # average value: B_Health_const_0 - B['Q_Health_Home_negative']
+
+    for mother in range(0, no_mothers):
+        # use B_Health_const_0 and B_Health_slope_0 which are hard-coded
+        mothers.append(Mother_simplified(nt, B, mother, df, B_Health_const_0, B_Health_slope_0))
 
     # LOOP OVER EVERY TIME VALUE
     for t in range(0,nt-1):
@@ -454,7 +456,7 @@ FP_sliders = many_sliders(FP_label,'FP_slider',FP_0,FP_initial,np.zeros(len(FP_0
 FP_combination_sliders = many_sliders(FP_combination_label,'FP_combination_slider',FP_combination_0,[],
                                       np.zeros(len(FP_combination_0)),np.ones(len(FP_combination_0)),
                                       num_rows=1, num_cols=2, width=6)
-B_sliders = many_sliders(B_label,'B_slider',B_0,B_initial,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=4, num_cols=4, width=3)
+B_sliders = many_sliders(B_label,'B_slider',B_0,B_initial,np.zeros(len(B_0)),np.array(B_0)*4, num_rows=5, num_cols=4, width=3)
 # many_sliders(labels, type used in Input() as an identifier of group of sliders, initial values, min, max, ...
 C_sliders = many_sliders(C_label,'C_slider',C_0,C_initial,np.zeros(len(C_0)),np.ones(len(C_0)), num_rows=3, num_cols=4, width=3)
 
