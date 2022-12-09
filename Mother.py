@@ -33,7 +33,7 @@ class Mother_simplified:
             self._l2 = [B['Network_L2_Predisp']]
             
             self._network_l4 = self._l4[0]
-            self._network_l2 = self._l4[0]
+            self._network_l2 = self._l2[0]
 
             self._time_CHV = int(np.random.randint(0, 8, 1))
             self._CHV = 0
