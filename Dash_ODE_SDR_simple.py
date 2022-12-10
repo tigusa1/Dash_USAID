@@ -756,7 +756,7 @@ def update_graph(S_values,FP_values,B_values,C_values,P_values,FP_max): # each a
     }
 
     # SMO
-    NM_DALY    = np.concatenate((SMO[0],SMO[1]))
+    NM_DALY    = np.concatenate((SMO[0][:,0:3],SMO[1][:,0:3]), axis = 1)
     labels     = ['Home near miss','L2 near miss','L4 near miss','Home DALY','L2 DALY','L4 DALY']
     line_color = [2, 1, 0, 2, 1, 0]
     line_dash  = ['dash', 'dash', 'dash', 'none', 'none', 'none']
