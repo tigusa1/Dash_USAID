@@ -132,9 +132,7 @@ B_info = [
     ['Q_Health_L4_L2_difference',        1., 'Difference L4-L2 Health Effect'     , None],
     ['Q_Health_L4_referral_difference', 0.5, 'L2 -> L4 Referral Health Effect'    , None],
     ['Q_Health_Home_negative',          3.0, 'Home Delivery Health Effect'        , None], #
-    ['Network_L4_Predisp',              0.0, 'Network L4 Predisp'                 , None],
-    ['Network_L2_Predisp',              0.0, 'Network L2 Predisp'                 , None],
-    ['Network_Effect',                  1.0, 'Network Effect'                     , None],
+    ['CHV_Influence',                   0.08, 'Reach of CHV'                      , None],
     ['Time_delay_awareness',            2.0, 'Awareness Delay (months)'           , None], # 24
 ]
 
@@ -266,6 +264,10 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
         B[name] = B_original[idx]         # B['Health_outcomes__Predisp'] = 2.4
         globals()[name] = B_original[idx] # Need to initialize for get_prob_logit_health()
 
+    for mother in range(0, no_mothers):
+        # use B_Health_const_0 and B_Health_slope_0 which are hard-coded
+        mothers.append(Mother_simplified(nt, B, mother, df, B_Health_const_0, B_Health_slope_0))
+
     # INITIAL PROBABILITIES
     # prob_l4_0 prob of L4
     # prob_l2_0 prob of L2 given not L4
@@ -273,12 +275,8 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
     # logit_health_l4_l2_0  prob of healthy delivery at L4 given referral from L2 (logit)
     # logit probability of Lx term: Health_outcomes__Predisp * neg_health_outcomes[k]
     prob_l4_0, prob_l2_0, logit_health_l4_0, logit_health_l2_0, logit_health_l4_l2_0, logit_health_l0_0 = \
-        get_prob_logit_health(B, L4_Q[0], L2_Q[0], neg_health_outcomes_0, B_Health_const_0)
+        get_prob_logit_health(B, L4_Q[0], L2_Q[0], neg_health_outcomes_0, B_Health_const_0, mothers, None)
     P_D[0] = logistic(logit_health_l0_0) # average value: B_Health_const_0 - B['Q_Health_Home_negative']
-
-    for mother in range(0, no_mothers):
-        # use B_Health_const_0 and B_Health_slope_0 which are hard-coded
-        mothers.append(Mother_simplified(nt, B, mother, df, B_Health_const_0, B_Health_slope_0))
 
     # LOOP OVER EVERY TIME VALUE
     for t in range(0,nt-1):
@@ -441,7 +439,7 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values): # values from the
         P_D[t+1]   = L2_4_health_outcomes
 
         prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0 = \
-            get_prob_logit_health(B, l4_quality, l2_quality, neg_health_outcomes, B['Health_const_0'])
+            get_prob_logit_health(B, l4_quality, l2_quality, neg_health_outcomes, B['Health_const_0'], mothers, None)
 
         probs[t+1,:] = np.append(
                             np.array([prob_l4, prob_l2*(1-prob_l4), 1-prob_l4-prob_l2*(1-prob_l4),

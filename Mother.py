@@ -21,29 +21,29 @@ class Mother_simplified:
 
         self._predisp_ANC = Predisp_ANC_const_0 + Predisp_ANC_slope_0 * (np.random.uniform(-1, 1, 1))
 
-        self.flag_network = False
+        self._id = unique_id
 
-        if self.flag_network:
-            self.network_distance = 0.05
-            self.network_influence = 0.5
-            self.CHV_weight = 0.3 # slider
-            self.Rec_weight = 0.2
-            self.CHV_likelihood = 0.0895 # slider
+        self.flag_network = False # when flag network is false, the network is not built and the network effect is 0
 
-            self._network = []
+        self.network_distance = 0.05
+        self.network_influence = 0.5
+        self.CHV_weight = 0.3 # slider
+        self.Rec_weight = 0.2
+        self.CHV_likelihood = B['CHV_Influence'] # 0.0895
 
-            self._id = unique_id
-            self._SES = df['wealth'][unique_id]
-            self._location = df['new_lat_long'][unique_id]
+        self._network = []
 
-            self._l4 = [B['Network_L4_Predisp']]
-            self._l2 = [B['Network_L2_Predisp']]
-            
-            self._network_l4 = self._l4[0]
-            self._network_l2 = self._l2[0]
+        self._SES = df['wealth'][unique_id]
+        self._location = df['new_lat_long'][unique_id]
 
-            self._time_CHV = int(np.random.randint(0, 8, 1))
-            self._CHV = 0
+        self._l4 = [0]
+        self._l2 = [0]
+
+        self._network_l4 = 0
+        self._network_l2 = 0
+
+        self._time_CHV = int(np.random.randint(0, 8, 1))
+        self._CHV = 0
 
         self.B = B
 
@@ -71,21 +71,17 @@ class Mother_simplified:
     def update_predisp(self): 
         CHV_weight = self.CHV_weight # for weighting CHV greater in mother's predisposition for choice of facility
         Rec_weight = self.Rec_weight # for weighting recent opinion greater in mothers' predisposition for choice of facility
-        if self._l4[-1] == 2: # looks for whether a CHV was seen
+        if (self._l4[-1]) == 2: # looks for whether a CHV was seen
             self._network_l4 = (1-CHV_weight)*np.sum(self._l4[:-1])/len(self._l4) + CHV_weight*self._l4[-1]*0.5/len(self._l4)
         else:
             self._network_l4 = (1-Rec_weight)*np.sum(self._l4[:-1])/len(self._l4) + Rec_weight*self._l4[-1]/len(self._l4)
         self._network_l2 = (1-Rec_weight)*np.sum(self._l2[:-1])/len(self._l2) + Rec_weight*self._l2[-1]/len(self._l2)
 
-    def choose_delivery(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity):
+    def choose_delivery(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity, mothers):
         """delivery facility depending on where one goes for care and health status"""
 
-        if self.flag_network:
-            self.B['Network_L4_Predisp'] = self._network_l4
-            self.B['Network_L2_Predisp'] = self._network_l2
-
         prob_l4, prob_l2, logit_health_l4, logit_health_l2, logit_health_l4_l2, logit_health_l0 = \
-            get_prob_logit_health(self.B, l4_quality, l2_quality, health_outcomes, self.logit_health)
+            get_prob_logit_health(self.B, l4_quality, l2_quality, health_outcomes, self.logit_health, mothers, self._id)
 
         rand = np.random.uniform(0, 1, 1)
         if prob_l4 > rand:
@@ -147,14 +143,14 @@ class Mother_simplified:
             if ANC_net_capacity > 0:
                 self.visit_anc()
         elif self._gest_age == 9:
-            self.choose_delivery(l4_quality, l2_quality, health_outcomes, L2_net_capacity)
+            self.choose_delivery(l4_quality, l2_quality, health_outcomes, L2_net_capacity, mothers)
             self.deliver()
             if self.flag_network:
                 self.influence_Net(mothers)
 
         self._health = logistic(self.logit_health)
 
-def get_prob_logit_health(B, l4_quality, l2_quality, neg_health_outcomes, logit_initial):
+def get_prob_logit_health(B, l4_quality, l2_quality, neg_health_outcomes, logit_initial, mothers, id):
     # neg_health_outcomes[k], k = 0 (home), 1 (L2), 2 (L4)
     Health_outcomes__Predisp = B['Health_outcomes__Predisp']
     L_Q__Predisp = B['L_Q__Predisp']
@@ -168,9 +164,12 @@ def get_prob_logit_health(B, l4_quality, l2_quality, neg_health_outcomes, logit_
 
     Initial_Negative_Predisp = B['Initial_Negative_Predisp']  # 0
 
-    Network_L4 = B['Network_L4_Predisp']
-    Network_L2 = B['Network_L2_Predisp']
-    Network_Effect = B['Network_Effect']
+    if id is not None:
+        Network_L4 = mothers[id]._network_l4
+        Network_L2 = mothers[id]._network_l2
+        Network_Effect = 2
+    else:
+        Network_Effect, Network_L4, Network_L2 = 0, 0, 0
 
     logit_predisp_l4 = L_Q__Predisp * l4_quality \
                        + Health_outcomes__Predisp * neg_health_outcomes[2] \
