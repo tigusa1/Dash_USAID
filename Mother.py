@@ -10,8 +10,8 @@ class Mother_simplified:
         self._health = logistic(self.logit_health)
 
         self._gest_age = -(np.int(np.random.randint(-9, max_gest_age, 1)))
-        self._delivery = None
-        self._facility = None
+        self._delivery = None # health outcome of delivery
+        self._facility = None # facility chosen
         self.delivered = False  # needed to count the number of deliveries per month
         self.ANC_visited = False
         self._anc        = 0
@@ -23,7 +23,7 @@ class Mother_simplified:
 
         self._id = unique_id
 
-        self.flag_network = False # when flag network is false, the network is not built and the network effect is 0
+        self.flag_network = False  # when flag network is false, the network is not built and the network effect is 0
 
         self.network_distance = 0.05
         self.network_influence = 0.5
@@ -47,12 +47,27 @@ class Mother_simplified:
 
         self.B = B
 
+        self._predisp_PNC = np.random.uniform(0, 0.2, 1) + (self._anc >= 4)*0.2
+        self._pnc = 0
+        self.PNC_visited = False
+        self._changed = None
+
+    def visit_pnc(self):
+        """go to PNC if predisposition for it, changes health"""
+        if self._predisp_PNC > np.random.uniform(0, 1, 1):
+            self._pnc += 1
+            self.PNC_visited = True
+        if self.delivered == 1:
+            logit_pnc_health = 1 + (self._pnc >= 3)*self.B['PNC Effect']
+            self._delivered = np.random.binomial(1, logistic(logit_pnc_health), 1)
+            self._changed = 1 - self._delivered
+
     def visit_anc(self):
         """go to ANC if predisposition for it, changes health"""
         if self._predisp_ANC > np.random.uniform(0, 1, 1):
-            self.logit_health += self.B['ANC_effect']
             self._anc += 1
             self.ANC_visited = True
+        # MC: consider update predisposition for L2 or L4 facility
 
     def set_B(self, B):
         # used in calc_y at every time step to allow for updates in B
@@ -60,7 +75,9 @@ class Mother_simplified:
 
     def build_Net(self, mothers):
         for idx, mother in enumerate(mothers):
-            if (self._id != idx) and (np.linalg.norm(np.array(self._location) - np.array(mother._location)) < self.network_distance) and (self._SES == mother._SES):
+            if (self._id != idx) \
+                    and (np.linalg.norm(np.array(self._location) - np.array(mother._location)) < self.network_distance) \
+                    and (self._SES == mother._SES):
                 self._network.append(idx) 
 
     def see_CHV(self): # if the mother sees a CHV, she will have additional positive influence to go to a level4/5 facility
@@ -68,7 +85,7 @@ class Mother_simplified:
             self._CHV = 1 
             self._l4.append(2) # this serves as a mark for if a CHV was seen 
 
-    def update_predisp(self): 
+    def update_npredisp(self):
         CHV_weight = self.CHV_weight # for weighting CHV greater in mother's predisposition for choice of facility
         Rec_weight = self.Rec_weight # for weighting recent opinion greater in mothers' predisposition for choice of facility
         if (self._l4[-1]) == 2: # looks for whether a CHV was seen
@@ -126,7 +143,7 @@ class Mother_simplified:
             else:
                 mothers[mother]._l2.append(-1)
 
-    def increase_age(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity, ANC_net_capacity, mothers, ts):
+    def increase_age(self, l4_quality, l2_quality, health_outcomes, L2_net_capacity, AP_net_capacity, mothers, ts):
         """increase gestational age (step)"""
         self._gest_age = self._gest_age + 1
 
@@ -137,16 +154,21 @@ class Mother_simplified:
             if self._gest_age == self._time_CHV:
                 self.see_CHV()
 
-            self.update_predisp()
+            self.update_npredisp()
 
         if (self._gest_age > 0) & (self._gest_age < 9):
-            if ANC_net_capacity > 0:
+            if AP_net_capacity > 0:
                 self.visit_anc()
         elif self._gest_age == 9:
+            if self._anc >= 4:
+                self.logit_health += 4*self.B['ANC_effect']
             self.choose_delivery(l4_quality, l2_quality, health_outcomes, L2_net_capacity, mothers)
             self.deliver()
             if self.flag_network:
                 self.influence_Net(mothers)
+        elif (self._gest_age > 9) & (self._gest_age < 13):
+            if AP_net_capacity > 0:
+                self.visit_pnc()
 
         self._health = logistic(self.logit_health)
 
@@ -164,12 +186,14 @@ def get_prob_logit_health(B, l4_quality, l2_quality, neg_health_outcomes, logit_
 
     Initial_Negative_Predisp = B['Initial_Negative_Predisp']  # 0
 
+    Network_Effect = 4
+
     if id is not None:
         Network_L4 = mothers[id]._network_l4
         Network_L2 = mothers[id]._network_l2
-        Network_Effect = 2
     else:
-        Network_Effect, Network_L4, Network_L2 = 0, 0, 0
+        Network_L4 = np.mean([mother._network_l4 for mother in mothers])
+        Network_L2 = np.mean([mother._network_l2 for mother in mothers])
 
     logit_predisp_l4 = L_Q__Predisp * l4_quality \
                        + Health_outcomes__Predisp * neg_health_outcomes[2] \
