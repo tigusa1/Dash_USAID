@@ -47,7 +47,7 @@ class Mother_simplified:
 
         self.B = B
 
-        self._predisp_PNC = np.random.uniform(0, 0.2, 1) + (self._anc >= 4)*0.2
+        self._predisp_PNC = np.random.uniform(0.4, 0.8, 1) + (self._anc >= 4)*0.2
         self._pnc = 0
         self.PNC_visited = False
         self._changed = None
@@ -57,10 +57,10 @@ class Mother_simplified:
         if self._predisp_PNC > np.random.uniform(0, 1, 1):
             self._pnc += 1
             self.PNC_visited = True
-        if self.delivered == 1:
-            logit_pnc_health = 1 + (self._pnc >= 3)*self.B['PNC Effect']
-            self._delivered = np.random.binomial(1, logistic(logit_pnc_health), 1)
-            self._changed = 1 - self._delivered
+        if (self._delivery == 1) and (self._gest_age == 12): # if positive outcome after delivery
+            logit_pnc_health = 1.5 + (self._pnc == 3)*self.B['PNC_effect']
+            self._delivery = np.random.binomial(1, logistic(logit_pnc_health), 1)
+            self._changed = float(1 - self._delivery)
 
     def visit_anc(self):
         """go to ANC if predisposition for it, changes health"""

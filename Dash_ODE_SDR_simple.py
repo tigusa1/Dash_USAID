@@ -246,10 +246,12 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values):  # values from th
     y_t = np.zeros((nt, len(S_values)))  # S_values = stocks
     t_all = np.zeros(nt)
     anc_t, pnc_t, health_t, gest_age_t, deliveries = {0: [0]}, {0: [0]}, {0: [0]}, {0: [0]}, {0: [0]}
-    num_deliver, num_deliver_avg, neg_HO_avg = np.zeros((nt, 4)), np.zeros((nt, 4)), np.zeros((nt, 4))
-    pos_HO, neg_HO, L2_D_Capacity, L4_D_Capacity, L2_AP_Capacity, num_ANC_avg, num_PNC_avg, num_ANC_visits, num_PNC_visits = \
+    num_deliver, num_deliver_avg, neg_HO_avg, num_post_neg_avg = \
+        np.zeros((nt, 4)), np.zeros((nt, 4)), np.zeros((nt, 4)), np.zeros((nt, 4))
+    pos_HO, neg_HO, L2_D_Capacity, L4_D_Capacity, L2_AP_Capacity, num_ANC_avg, num_PNC_avg, num_ANC_visits, \
+        num_PNC_visits, num_post_neg = \
         np.zeros([nt, 4]), np.zeros([nt, 4]), np.ones(nt), np.ones(nt), np.ones(nt), np.zeros([nt, 1]), np.zeros(
-            [nt, 1]), np.zeros([nt, 1]), np.zeros([nt, 1])
+            [nt, 1]), np.zeros([nt, 1]), np.zeros([nt, 1]), np.zeros([nt,1])
     probs = np.ones((nt, n_probs))
     B = {}  # Use a dictionary so that we only need to pass B to the Mother class
     n_zeros = []
@@ -365,7 +367,7 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values):  # values from th
         l4_quality_avg = window_average(L4_Q, t + 1, time_window, linear_weights=True)
         # L2_4_health_outcomes_avg = window_average(P_D, t+1, time_window, linear_weights=True) # use neg_health_outcomes
 
-        L2_deliveries, ANC_visits, PNC_visits = 0, 0, 0
+        L2_deliveries, ANC_visits, PNC_visits, Change_neg = 0, 0, 0, 0
         for mother in mothers:
             L2_net_capacity = 1 - (L2_deliveries + 0) / L2_D_Capacity[t]  # add 1 to see if one more can be delivered
             AP_net_capacity = 1 - (ANC_visits + PNC_visits) / L2_AP_Capacity[t]
@@ -389,6 +391,9 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values):  # values from th
                 PNC_visits += 1
                 pnc_visit.append(1)
                 mother.PNC_visited = False
+            if mother._changed:
+                Change_neg += 1
+                mother._changed = False
 
             # pred_disp.append([mother._pre])
             gest_age.append(mother._gest_age)
@@ -401,6 +406,9 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values):  # values from th
         facilities[t + 1] = facility
         num_ANC_visits[t + 1] = np.sum(anc_visit) * B['Population_factor']
         num_PNC_visits[t + 1] = np.sum(pnc_visit) * B['Population_factor']
+        num_post_neg[t + 1] = Change_neg * B['Population_factor'] / B['Outcomes_factor']
+        # additional negative health outcomes bc no PNC
+        # check use of B['Outcomes_factor']
 
         fac_t1 = np.array(facilities[t + 1])
         for k in range(3):
@@ -422,8 +430,9 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values):  # values from th
         neg_HO[t + 1, 3] = sum(neg_HO[t + 1, :3])
 
         if t == nt - 2:  # last value of t, need to add to these array for plotting
-            L2_D_Capacity[t + 1] = L2_DC[t + 1] * L_Capacity_factor  # need to fill in the last time value
-            L4_D_Capacity[t + 1] = L4_DC[t + 1] * L_Capacity_factor * L4_D_Capacity_Multiplier
+            L2_D_Capacity[t + 1]    = L2_DC[t + 1] * L_Capacity_factor  # need to fill in the last time value
+            L4_D_Capacity[t + 1]    = L4_DC[t + 1] * L_Capacity_factor * L4_D_Capacity_Multiplier
+            L2_AP_Capacity[t + 1]   = (1 - L2_DC[t+1]) * AP_Capacity_factor
 
         # HEALTH OUTCOMES ANALYSIS
         # window_average(x, t, window_duration, x0=1, x1=None, linear_weights=True)
@@ -434,6 +443,7 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values):  # values from th
         num_deliver_avg[t + 1, :] = window_average(num_deliver, t + 2, time_window, linear_weights=True)
         num_ANC_avg[t + 1, :] = window_average(num_ANC_visits, t + 2, time_window, linear_weights=True)
         num_PNC_avg[t + 1, :] = window_average(num_PNC_visits, t + 2, time_window, linear_weights=True)
+        num_post_neg_avg[t + 1, :] = window_average(num_post_neg, t + 2, time_window, linear_weights=True)
 
         l2_quality = L2_Q[t + 1]
         l4_quality = L4_Q[t + 1]
@@ -467,11 +477,12 @@ def calc_y(S_values, FP_values, B_values, C_values, P_values):  # values from th
         near_miss_factor, DALY_fatalities, DALY_near_miss = 1.6, 40, 25
         num_near_miss_avg = neg_HO_avg * near_miss_factor
         DALY = neg_HO_avg * DALY_fatalities + num_near_miss_avg * DALY_near_miss
+
     return t_all, y_t, \
         [num_deliver_avg[:, 2], num_deliver_avg[:, 1], num_deliver_avg[:, 0], num_deliver_avg[:, 3],
          L4_D_Capacity * B['Population_factor'], L2_D_Capacity * B['Population_factor'],
          L2_AP_Capacity * B['Population_factor'], num_ANC_avg[:, 0], num_PNC_avg[:, 0]], \
-        [pos_HO, neg_HO_avg], probs, [num_near_miss_avg, DALY]  # pos_HO not used
+        [pos_HO, neg_HO_avg], probs, [num_near_miss_avg, DALY, num_post_neg_avg]  # pos_HO not used
 
 
 # DASHBOARD
@@ -783,11 +794,11 @@ def update_graph(S_values, FP_values, B_values, C_values, P_values, FP_max):  # 
     }
 
     # SMO
-    NM_DALY = np.concatenate((SMO[0][:, 0:3], SMO[1][:, 0:3]), axis=1)
-    labels = ['Home near miss', 'L2 near miss', 'L4 near miss', 'Home DALY', 'L2 DALY', 'L4 DALY']
-    line_color = [2, 1, 0, 2, 1, 0]
-    line_dash = ['dash', 'dash', 'dash', 'none', 'none', 'none']
-    k_plot = [2, 1, 0, 5, 4, 3]
+    NM_DALY = np.concatenate((SMO[0][:, 0:3], SMO[1][:, 0:3], SMO[2]), axis=1)
+    labels = ['Home near miss', 'L2 near miss', 'L4 near miss', 'Home DALY', 'L2 DALY', 'L4 DALY', 'Postbirth Neg HO']
+    line_color = [2, 1, 0, 2, 1, 0, 3]
+    line_dash = ['dash', 'dash', 'dash', 'none', 'none', 'none', 'none']
+    k_plot = [2, 1, 0, 5, 4, 3, 6]
     fig_3A_SMO = {  # row 3 column A of figures
         'data': [{
             'x': t_all[2:],
