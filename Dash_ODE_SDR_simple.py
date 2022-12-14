@@ -1,3 +1,4 @@
+# if environment is changed, install dash, dash_bootstrap_components
 import dash
 from dash import html, dcc
 from dash.dependencies import Input, Output, State, MATCH, ALL
