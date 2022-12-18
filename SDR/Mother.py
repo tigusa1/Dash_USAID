@@ -9,8 +9,11 @@ class Mother_simplified:
         self.logit_health_BL = self.logit_health
         self._health = logistic(self.logit_health)
 
+        self.logit_pnc_health = self.logit_health
+
         self._gest_age = -(np.int(np.random.randint(-9, max_gest_age, 1)))
         self._delivery = None # health outcome of delivery
+        self.baby_delivery = None
         self._facility = None # facility chosen
         self.delivered = False  # needed to count the number of deliveries per month
         self.ANC_visited = False
@@ -47,24 +50,29 @@ class Mother_simplified:
 
         self.B = B
 
-        self._predisp_PNC = np.random.uniform(0.4, 0.8, 1) + (self._anc >= 4)*0.2
+        self._predisp_PNC = np.random.uniform(0.2, 0.7, 1) + (self._anc >= 4)*0.2
         self._pnc = 0
         self.PNC_visited = False
         self._changed = None
+
+        self.post_delivery = None
+        self.post_delivery_baby = None
 
     def visit_pnc(self):
         """go to PNC if predisposition for it, changes health"""
         if self._predisp_PNC > np.random.uniform(0, 1, 1):
             self._pnc += 1
             self.PNC_visited = True
+            self.logit_pnc_health += self.B['PNC_effect']
         if (self._delivery == 1) and (self._gest_age == 12): # if positive outcome after delivery
-            logit_pnc_health = 1.5 + (self._pnc == 3)*self.B['PNC_effect']
-            self._delivery = np.random.binomial(1, logistic(logit_pnc_health), 1)
-            self._changed = float(1 - self._delivery)
+            self.post_delivery = np.random.binomial(1, logistic(self.logit_pnc_health), 1) # create another variable for baby and mother HO
+        if (self.baby_delivery == 1) and (self._gest_age == 12):
+            self.post_delivery_baby = np.random.binomial(1, logistic(self.logit_pnc_health-2), 1)
 
     def visit_anc(self):
         """go to ANC if predisposition for it, changes health"""
         if self._predisp_ANC > np.random.uniform(0, 1, 1):
+            self.logit_health += self.B['ANC_effect']
             self._anc += 1
             self.ANC_visited = True
         # MC: consider update predisposition for L2 or L4 facility
@@ -160,8 +168,6 @@ class Mother_simplified:
             if AP_net_capacity > 0:
                 self.visit_anc()
         elif self._gest_age == 9:
-            if self._anc >= 4:
-                self.logit_health += 4*self.B['ANC_effect']
             self.choose_delivery(l4_quality, l2_quality, health_outcomes, L2_net_capacity, mothers)
             self.deliver()
             if self.flag_network:
